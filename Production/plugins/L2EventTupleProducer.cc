@@ -374,8 +374,16 @@ private:
                         static_cast<Long64_t>(reco_tau::gen_truth::GenLepton::MaxNumberOfParticles);
 
                 if(mothers.empty()) return -1;
-                if(mothers.size() > 6)
-                    throw cms::Exception("L2EventTupleProducer") << "Gen particle with > 6 mothers.";
+                const size_t mothers_size = mothers.size();
+                try{
+                  if(mothers_size > 6)
+                      throw cms::Exception("L2EventTupleProducer");
+                }
+                catch(cms::Exception&){ 
+                  std::cout<< "Gen particle with > 6 mothers." << std::endl;
+                  trainTuple.ClearEntries();
+                  return -1;
+                }
                 if(mothers.size() > 1 && genLepton.allParticles().size() > static_cast<size_t>(shift_scale))
                     throw cms::Exception("L2EventTupleProducer") << "Too many gen particles per gen lepton.";
                 Long64_t pos = 0;

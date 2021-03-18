@@ -1,0 +1,4 @@
+lumiMask=TauMLTools/Production/crab/configs/lumisection/lumisection_EphemeralHLTPhysics_json.txt
+sampleType=Run2Data applyGenTau=False
+
+EphemeralHLTPhysics3 /EphemeralHLTPhysics3/Run2018D-v1/RAW

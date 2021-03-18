@@ -1,3 +1,4 @@
+
 import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 from Configuration.Eras.Era_Run3_cff import Run3
@@ -51,6 +52,9 @@ if len(options.fileList) > 0:
     readFileList(process.source.fileNames, options.fileList, options.fileNamePrefix)
 elif len(options.inputFiles) > 0:
     addFilesToList(process.source.fileNames, options.inputFiles, options.fileNamePrefix)
+else:
+    process.source.fileNames = cms.untracked.vstring('file:8AC4B804-1AE1-344C-9C3A-1A7182F898FE.root')
+
 
 if len(options.lumiFile) > 0:
     import FWCore.PythonUtilities.LumiList as LumiList
