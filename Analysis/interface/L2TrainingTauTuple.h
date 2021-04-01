@@ -74,17 +74,17 @@
     HBHE_VAR(ULong64_t, detId) /* */ \
     HBHE_VAR(Float_t, chi2) /* */ \
     HBHE_VAR(ULong64_t, flags) /* */ \
-    HBHE_VAR(Float_t, eraw) /* */ \
-    HBHE_VAR(Float_t, eaux) /* */ \
-    HBHE_VAR(Float_t, timeFalling) /* */ \
-    HBHE_VAR(ULong64_t, idFront) /* */ \
-    HBHE_VAR(Float_t, rho_front) /* */ \
-    HBHE_VAR(Float_t, eta_front) /* */ \
-    HBHE_VAR(Float_t, phi_front) /* */ \
-    HBHE_VAR(UInt_t, auxHBHE) /* */ \
-    HBHE_VAR(UInt_t, auxPhase1) /* */ \
-    HBHE_VAR(UInt_t, auxTDC) /* */ \
-    HBHE_VAR(Bool_t, isMerged) /* */ \
+    /*HBHE_VAR(Float_t, eraw)  */ \
+    /*HBHE_VAR(Float_t, eaux)  */ \
+    /*HBHE_VAR(Float_t, timeFalling)  */ \
+    /*HBHE_VAR(ULong64_t, idFront)  */ \
+    /*HBHE_VAR(Float_t, rho_front)  */ \
+    /*HBHE_VAR(Float_t, eta_front)  */ \
+    /*HBHE_VAR(Float_t, phi_front)  */ \
+    /*HBHE_VAR(UInt_t, auxHBHE)  */ \
+    /*HBHE_VAR(UInt_t, auxPhase1)  */ \
+    /*HBHE_VAR(UInt_t, auxTDC)  */ \
+    /*HBHE_VAR(Bool_t, isMerged)  */ \
     HO_VAR(Float_t, rho) /* */ \
     HO_VAR(Float_t, eta) /* */ \
     HO_VAR(Float_t, phi) /* */ \
@@ -122,7 +122,7 @@
     PATAVERT(Int_t, ndof) /* number of degrees of freedom of vertices (PV) */ \
 
 #define VAR(type, name) DECLARE_BRANCH_VARIABLE(type, name)
-DECLARE_TREE(tau_train_tuple, Tau, TauTrainTuple, L2TRAINTAU_DATA, "TauTrainTuple")
+DECLARE_TREE(tau_train_tuple, Tau, TauTrainTuple, L2TRAINTAU_DATA, "L2TauTrainTuple")
 #undef VAR
 
 #define VAR(type, name) ADD_DATA_TREE_BRANCH(name)
