@@ -1,5 +1,5 @@
 <bin name="L2TrainingTupleProducer" file="L2TrainingTupleProducer.cxx">
     <use name="boost_program_options"/>
     <use name="rootmath"/>
-    <use name="TauMLTools/Core"/> 
-</bin>
+    <use name="TauMLTools/Core"/>
+</bin> 
