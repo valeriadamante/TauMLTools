@@ -48,14 +48,13 @@ class NNInputs (enum.IntEnum):
     PatatrackSize = 21
     PatatrackSizeWithVertex = 22
     PatatrackPtSumWithVertex = 23
-    PatatrackPtStdDev = 24
-    PatatrackChargeSum = 25
-    PatatrackDeltaEta = 26
-    PatatrackDeltaPhi = 27
-    PatatrackChi2OverNdof = 28
-    PatatrackNdof = 29
-    PatatrackDxy = 30
-    PatatrackDz = 31
+    PatatrackChargeSum = 24
+    PatatrackDeltaEta = 25
+    PatatrackDeltaPhi = 26
+    PatatrackChi2OverNdof = 27
+    PatatrackNdof = 28
+    PatatrackDxy = 29
+    PatatrackDz = 30
     #PatavertPtv2 = 32
     #PatavertChi2OverNdof = 33
     #PatavertNdof = 34
@@ -113,49 +112,49 @@ def StandardizeSingleVar(CellGrid, varPos, varName, min=None, max=None, mean=Non
     maxVar = np.round(maxVar, 4)
     if(kwargs['verbose']>0):
         print(("var {}, minVar {}, maxVar {}").format(varName, minVar,maxVar))
-    nbins = kwargs["nBins"]
-    print(nbins)
-    bins=np.linspace(minVar,maxVar,nbins)
-    if kwargs["logX"]==True:
-        plt.xscale('log')
-    if kwargs["logY"]==True:
-        plt.yscale('log')
-
-    fig1 = plt.figure()
-    plt.title(varName)
-    if kwargs["logX"]==True:
-        plt.xscale('log')
-    if kwargs["logY"]==True:
-        plt.yscale('log')
-    low_high = (minVar, maxVar)
-    plt.hist(CellGrid[:,:,:,varPos].flatten(), color='b', alpha=0.5, range=low_high, bins=bins, histtype='stepfilled', density=True)
-    plt.title(('{} before normalizing').format(varName))
-    plt.xlabel(varName)
-    plt.ylabel("events")
-    text = [(("mean = {}\nstd = {}\nminVar = {}\nmaxVar = {}").format(mean, std, minVar, maxVar))]
-    plt.legend(text, loc="upper right")
-    fig1.savefig(('{}/{}_beforeNormalizing.pdf').format(outDir, varName))
+    if(kwargs['plot']):
+        nbins = kwargs["nBins"]
+        bins=np.linspace(minVar,maxVar,nbins)
+        if kwargs["logX"]==True:
+            plt.xscale('log')
+        if kwargs["logY"]==True:
+            plt.yscale('log')
+        fig1 = plt.figure()
+        plt.title(varName)
+        if kwargs["logX"]==True:
+            plt.xscale('log')
+        if kwargs["logY"]==True:
+            plt.yscale('log')
+        low_high = (minVar, maxVar)
+        plt.hist(CellGrid[:,:,:,varPos].flatten(), color='b', alpha=0.5, range=low_high, bins=bins, histtype='stepfilled', density=True)
+        plt.title(('{} before normalizing').format(varName))
+        plt.xlabel(varName)
+        plt.ylabel("events")
+        text = [(("mean = {}\nstd = {}\nminVar = {}\nmaxVar = {}").format(mean, std, minVar, maxVar))]
+        plt.legend(text, loc="upper right")
+        fig1.savefig(('{}/{}_beforeNormalizing.pdf').format(outDir, varName))
     CellGrid[:,:,:,varPos]= np.clip(np.where(mask, ((CellGrid[:,:,:,varPos]-mean)/std), 0 ), min, max)
     dict[varName]={"mean ": mean, "std ": std,  "min ": min,  "max ": max }
     if(kwargs['verbose']>0):
         print(dict)
-    fig2 = plt.figure()
-    plt.title(varName)
-    if kwargs["logX"]==True:
-        plt.xscale('log')
-    if kwargs["logY"]==True:
-        plt.yscale('log')
-    bins=np.linspace(min,max,nbins)
-    low_high = (min, max)
-    plt.hist(CellGrid[:,:,:,varPos].flatten(), color='b', alpha=0.5, range=low_high, bins=bins, histtype='stepfilled', density=True)
-    plt.title(('{} after normalizing').format(varName))
-    plt.xlabel(varName)
-    plt.ylabel("events")
-    text = [(("mean = {}\nstd = {}\nmin = {}\nmax = {}").format(mean, std, min, max))]
-    #plt.text(maxVar*0.8,, text)
-    plt.legend(text, loc="upper right")
-    #plt.savefig(('{}/{}_beforeNormalizing.pdf').format(outDir, varName))
-    fig2.savefig(('{}/{}_afterNormalizing.pdf').format(outDir, varName))
+    if(kwargs['plot']):
+        fig2 = plt.figure()
+        plt.title(varName)
+        if kwargs["logX"]==True:
+            plt.xscale('log')
+        if kwargs["logY"]==True:
+            plt.yscale('log')
+        bins=np.linspace(min,max,nbins)
+        low_high = (min, max)
+        plt.hist(CellGrid[:,:,:,varPos].flatten(), color='b', alpha=0.5, range=low_high, bins=bins, histtype='stepfilled', density=True)
+        plt.title(('{} after normalizing').format(varName))
+        plt.xlabel(varName)
+        plt.ylabel("events")
+        text = [(("mean = {}\nstd = {}\nmin = {}\nmax = {}").format(mean, std, min, max))]
+        #plt.text(maxVar*0.8,, text)
+        plt.legend(text, loc="upper right")
+        #plt.savefig(('{}/{}_beforeNormalizing.pdf').format(outDir, varName))
+        fig2.savefig(('{}/{}_afterNormalizing.pdf').format(outDir, varName))
     final_time = time.time()-start
     if(kwargs["time"]==True):
         print(("time to fill {} = {} ").format(varName, final_time))
@@ -164,7 +163,7 @@ def StandardizeSingleVar(CellGrid, varPos, varName, min=None, max=None, mean=Non
 
 
 def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
-    kwArgs = {'outDir': 'outDistributions',  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo}
+    kwArgs = {'outDir': 'outDistributions',  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo, 'plot':True}
     # nVertices
     mean = int(round(CellGrid[:,:,:,np.intp(NNInputs.nVertices)].mean(),0))
     std = int(round(CellGrid[:,:,:,np.intp(NNInputs.nVertices)].std(),0))
@@ -188,7 +187,9 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     StandardizeSingleVar(CellGrid, NNInputs.EcalEnergyStdDev, "EcalEnergyStdDev", -5, 5, None, None, enMask, **kwArgs)
     # Ecal Size
     kwArgs['logY'] = False
-    StandardizeSingleVar(CellGrid, NNInputs.EcalSize, "EcalSize",  -5, 5, None, None, enMask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.EcalSize].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.EcalSize].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.EcalSize, "EcalSize", 0, 10, 0, std, enMask, **kwArgs)
     # Ecal Delta Eta --> take in range from [-0.5, 0.5] to [-1,1]
     minEta = (CellGrid[:,:,:,np.intp(NNInputs.EcalDeltaEta)]).min()
     maxEta = (CellGrid[:,:,:,np.intp(NNInputs.EcalDeltaEta)]).max()
@@ -209,7 +210,9 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     StandardizeSingleVar(CellGrid, NNInputs.EcalEnergySumForPositiveChi2, "EcalEnergySumForPositiveChi2",  0, 5, 0, l1Ptmax, chi2Mask, **kwArgs)
     kwArgs['logY'] = False
     # ecal energy size for positive chi2 --> with Chi2 mask
-    StandardizeSingleVar(CellGrid, NNInputs.EcalSizeForPositiveChi2, "EcalSize",  -5, 5, None, None, chi2Mask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.EcalSizeForPositiveChi2].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.EcalSizeForPositiveChi2].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.EcalSizeForPositiveChi2, "EcalSizeForPositiveChi2",  0, 10, 0, std, chi2Mask, **kwArgs)
     # Hcal EnergySum --> rescaling to l1Pt max
     enMask =  CellGrid[:,:,:,np.intp(NNInputs.HcalEnergySum)]>0
     kwArgs['logY'] = True
@@ -218,7 +221,9 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     StandardizeSingleVar(CellGrid, NNInputs.HcalEnergyStdDev, "HcalEnergyStdDev", -5, 5, None, None, enMask, **kwArgs)
     # Hcal Size
     kwArgs['logY'] = False
-    StandardizeSingleVar(CellGrid, NNInputs.HcalSize, "HcalSize",  -5, 5, None, None, enMask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.HcalSize].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.HcalSize].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.HcalSize, "HcalSize", 0, 10, 0, std, enMask, **kwArgs)
     # Hcal Delta Eta --> take in range from [-0.5, 0.5] to [-1,1]
     minEta = (CellGrid[:,:,:,np.intp(NNInputs.HcalDeltaEta)]).min()
     maxEta = (CellGrid[:,:,:,np.intp(NNInputs.HcalDeltaEta)]).max()
@@ -239,22 +244,26 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     StandardizeSingleVar(CellGrid, NNInputs.HcalEnergySumForPositiveChi2, "HcalEnergySumForPositiveChi2",  0, 5, 0, l1Ptmax, chi2Mask, **kwArgs)
     kwArgs['logY'] = False
     # hcal energy size for positive chi2 --> with Chi2 mask
-    StandardizeSingleVar(CellGrid, NNInputs.HcalSizeForPositiveChi2, "HcalSize",  -5, 5, None, None, chi2Mask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.HcalSizeForPositiveChi2].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.HcalSizeForPositiveChi2].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.HcalSizeForPositiveChi2, "HcalSizeForPositiveChi2",  0, 10, 0, std, chi2Mask, **kwArgs)
     # Patatrack PtSum  --> rescaling to l1Pt max
     enMask =  CellGrid[:,:,:,np.intp(NNInputs.PatatrackPtSum)]>0
     kwArgs['logY'] = True
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackPtSum, "PatatrackPtSum", 0, 5, 0, l1Ptmax, enMask, **kwArgs)
-    # Patatrack PtStdDev
-    StandardizeSingleVar(CellGrid, NNInputs.PatatrackPtStdDev, "PatatrackPtStdDev", -5, 5, None, None, enMask, **kwArgs)
     # Patatrack PtSum WithVertex --> rescaling to l1Pt max
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackPtSumWithVertex, "PatatrackPtSumWithVertex", 0, 5, 0, l1Ptmax, enMask, **kwArgs)
     kwArgs['logY'] = False
     # Patatrack Size
-    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSize, "PatatrackSize",  -5, 5, None, None, enMask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.PatatrackSize].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.PatatrackSize].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSize, "PatatrackSize", 0, 10, 0, std, enMask, **kwArgs)
     # Patatrack Charge Sum
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackChargeSum, "PatatrackChargeSum", -5, 5, None, None, enMask, **kwArgs)
     # Patatrack Size With Vertex
-    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSizeWithVertex, "PatatrackSizeWithVertex",  -5, 5, None, None, enMask, **kwArgs)
+    mean = round(CellGrid[:,:,:,NNInputs.PatatrackSizeWithVertex].mean(),0)
+    std = round(CellGrid[:,:,:,NNInputs.PatatrackSizeWithVertex].std(),0)
+    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSizeWithVertex, "PatatrackSizeWithVertex", 0, 10, 0, std, enMask, **kwArgs)
     # Patatrack Ndof
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackNdof, "PatatrackNdof", -5, 5, None, None, enMask, **kwArgs)
     # Patatrack Delta Eta --> take in range from [-0.5, 0.5] to [-1,1]
@@ -362,7 +371,6 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSum)]+= patatrack_pt[tau][item]
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackSize)]+= 1
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChargeSum)]+= patatrack_charge[tau][item]
-          CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtStdDev)]+= (patatrack_pt[tau][item])**2
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDeltaEta)] += patatrack_DeltaEta[tau][item] * patatrack_pt[tau][item]
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDeltaPhi)] += patatrack_DeltaPhi[tau][item] * patatrack_pt[tau][item]
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDz)] += patatrack_dz[tau][item] * patatrack_pt[tau][item]
@@ -373,10 +381,6 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
               CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSumWithVertex)]+= patatrack_pt[tau][item]
           if(patatrack_ndof[tau][item]>0):
               CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChi2OverNdof)]+= patatrack_chi2[tau][item] * patatrack_pt[tau][item] / patatrack_ndof[tau][item]
-
-
-        # 4.1 calculate patatrack PtStdDev
-        CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] - ((CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)])**2/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]-1) , 0)
 
         # normalize variables
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)])
