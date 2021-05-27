@@ -35,28 +35,31 @@ class NNInputs (enum.IntEnum):
     EcalDeltaPhi = 8
     EcalChi2 = 9
     EcalEnergySumForPositiveChi2 = 10
-    HcalEnergySum = 11
-    HcalSize = 12
-    HcalEnergyStdDev = 13
-    HcalDeltaEta = 14
-    HcalDeltaPhi = 15
-    HcalChi2 = 16
-    HcalEnergySumForPositiveChi2 = 17
-    PatatrackPtSum = 18
-    PatatrackSize = 19
-    PatatrackSizeWithVertex = 20
-    PatatrackPtStdDev = 21
-    PatatrackChargeSum = 22
-    PatatrackDeltaEta = 23
-    PatatrackDeltaPhi = 24
-    PatatrackChi2OverNdof = 25
-    PatatrackPtSumForPositiveChi2 = 26
-    PatatrackDxy = 27
-    PatatrackDz = 28
-    PatavertPtv2 = 29
-    PatavertChi2OverNdof = 30
-    PatatrackPtSumForPositiveChi2Vertex = 31
-    PatatrackPtSumWithVertex = 32
+    EcalSizeForPositiveChi2 = 11
+    HcalEnergySum = 12
+    HcalSize = 13
+    HcalEnergyStdDev = 14
+    HcalDeltaEta = 15
+    HcalDeltaPhi = 16
+    HcalChi2 = 17
+    HcalEnergySumForPositiveChi2 = 18
+    HcalSizeForPositiveChi2 = 19
+    PatatrackPtSum = 20
+    PatatrackSize = 21
+    PatatrackSizeWithVertex = 22
+    PatatrackPtSumWithVertex = 23
+    PatatrackPtStdDev = 24
+    PatatrackChargeSum = 25
+    PatatrackDeltaEta = 26
+    PatatrackDeltaPhi = 27
+    PatatrackChi2OverNdof = 28
+    PatatrackNdof = 29
+    PatatrackDxy = 20
+    PatatrackDz = 31
+    PatavertPtv2 = 32
+    PatavertChi2OverNdof = 33
+    PatavertNdof = 34
+    PatavertZ = 35
 
 
 dict = {}
@@ -183,7 +186,6 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     # Ecal EnergySum
     enMask =  CellGrid[:,:,:,np.intp(NNInputs.EcalEnergySum)]>0
     kwArgs['logY'] = True
-    #StandardizeSingleVar(CellGrid, NNInputs.EcalEnergySum, "EcalEnergySum", None, None, None, None, enMask, **kwArgs)
     StandardizeSingleVar(CellGrid, NNInputs.EcalEnergySum, "EcalEnergySum", 0, 5, 0, l1Ptmax, enMask, **kwArgs)
     # Ecal EnergyStdDev
     StandardizeSingleVar(CellGrid, NNInputs.EcalEnergyStdDev, "EcalEnergyStdDev", -5, 5, None, None, enMask, **kwArgs)
@@ -206,7 +208,6 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     StandardizeSingleVar(CellGrid, NNInputs.EcalChi2, "EcalChi2",  -5, 5, None, None, chi2Mask, **kwArgs)
     # Ecal EcalEnergySumForPositiveChi2
     StandardizeSingleVar(CellGrid, NNInputs.EcalEnergySumForPositiveChi2, "EcalEnergySumForPositiveChi2",  0, 5, 0, l1Ptmax, chi2Mask, **kwArgs)
-
     # Hcal EnergySum
     enMask =  CellGrid[:,:,:,np.intp(NNInputs.HcalEnergySum)]>0
     #StandardizeSingleVar(CellGrid, NNInputs.HcalEnergySum, "HcalEnergySum", None, None, None, None, enMask, **kwArgs)
@@ -245,7 +246,7 @@ def StandardizeVars(CellGrid, verbose=0, timeInfo=True):
     # Patatrack Size
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackSize, "PatatrackSize",  -5, 5, None, None, enMask, **kwArgs)
     # Patatrack Size WithVertex
-    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSizeWithVertex, "PatatrackSizeWithVertex",  -5, 5, None, None, enMask, **kwArgs) 
+    StandardizeSingleVar(CellGrid, NNInputs.PatatrackSizeWithVertex, "PatatrackSizeWithVertex",  -5, 5, None, None, enMask, **kwArgs)
     # Patatrack Delta Eta --> take in range from [-0.5, 0.5] to [-1,1]
     minEta = (CellGrid[:,:,:,np.intp(NNInputs.PatatrackDeltaEta)]).min()
     maxEta = (CellGrid[:,:,:,np.intp(NNInputs.PatatrackDeltaEta)]).max()
@@ -308,21 +309,26 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
             phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
             eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergySum)]+= caloRecHit_e_energy[tau][item]
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalSize)]+= 1
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergyStdDev)]+= (caloRecHit_e_energy[tau][item])**2
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalDeltaEta)] += caloRecHit_e_DeltaEta[tau][item] * caloRecHit_e_energy[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalDeltaPhi)] += caloRecHit_e_DeltaPhi[tau][item] * caloRecHit_e_energy[tau][item]
             if(caloRecHit_e_chi2[tau][item]>=0):
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalChi2)]+=  caloRecHit_e_chi2[tau][item]*caloRecHit_e_energy[tau][item]
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergySumForPositiveChi2)]+=  caloRecHit_e_energy[tau][item]
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergyStdDev)]+=  (caloRecHit_e_energy[tau][item])**2
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalSize)]+= 1
-        # normalize variables
+                CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalSizeForPositiveChi2)]+= 1
+        # 2.1 calculate energy std dev
+        CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergyStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergyStdDev)] - ((CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)])**2/CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]-1) , 0)
+
+        # 2.2 weight variables to EcalEnergySum
         CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaEta)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaEta)]/CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)], CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaEta)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaPhi)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaPhi)]/CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)], CellGrid[tau,:,:,np.intp(NNInputs.EcalDeltaPhi)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.EcalChi2)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySumForPositiveChi2)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.EcalChi2)]/CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySumForPositiveChi2)], CellGrid[tau,:,:,np.intp(NNInputs.EcalChi2)])
-        CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergyStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergyStdDev)] - (CellGrid[tau,:,:,np.intp(NNInputs.EcalEnergySum)]**2/CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.EcalSize)]-1) , 0)
 
 
-        # 3. filling hcal
+        # 3. filling Hcal
         nHcal = len(caloRecHit_had_energy[tau])
         for item in range(nHcal):
             deta = caloRecHit_had_DeltaEta[tau][item]
@@ -330,57 +336,72 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
             phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
             eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergySum)]+= caloRecHit_had_energy[tau][item]
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalSize)]+= 1
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergyStdDev)]+= (caloRecHit_had_energy[tau][item])**2
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalDeltaEta)] += caloRecHit_had_DeltaEta[tau][item] * caloRecHit_had_energy[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalDeltaPhi)] += caloRecHit_had_DeltaPhi[tau][item] * caloRecHit_had_energy[tau][item]
             if(caloRecHit_had_chi2[tau][item]>=0):
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalChi2)]+=  caloRecHit_had_chi2[tau][item]*caloRecHit_had_energy[tau][item]
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergySumForPositiveChi2)]+=  caloRecHit_had_energy[tau][item]
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergyStdDev)]+=  (caloRecHit_had_energy[tau][item])**2
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalSize)]+= 1
-        # normalize variables
+                CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalSizeForPositiveChi2)]+= 1
+        # 3.1 calculate energy std dev
+        CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] - ((CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)])**2/CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]-1) , 0)
+
+        # 3.2 weight variables to HcalEnergySum
         CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaEta)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaEta)]/CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)], CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaEta)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaPhi)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaPhi)]/CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)], CellGrid[tau,:,:,np.intp(NNInputs.HcalDeltaPhi)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.HcalChi2)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySumForPositiveChi2)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.HcalChi2)]/CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySumForPositiveChi2)], CellGrid[tau,:,:,np.intp(NNInputs.HcalChi2)])
-        CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] - (CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)]**2/CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]-1) , 0)
 
-        #patatrack_pt, patatrack_DeltaEta, patatrack_DeltaPhi, patatrack_chi2, patatrack_ndof, patatrack_charge, patatrack_dxy, patatrack_dz, patatrack_hasVertex, patatrack_vert_z, patatrack_vert_ptv2, patatrack_vert_chi2, patatrack_vert_ndof
-        # 3. filling patatrack
 
+        # 4. filling patatrack
         nPatatrack = len(patatrack_pt[tau])
-
         for item in range(nPatatrack):
             deta = patatrack_DeltaEta[tau][item]
             dphi = patatrack_DeltaPhi[tau][item]
             phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
             eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSum)]+= patatrack_pt[tau][item]
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChargeSum)]+= patatrack_pt[tau][item]
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackSize)]+= 1
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChargeSum)]+= patatrack_charge[tau][item]
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtStdDev)]+= (patatrack_pt[tau][item])**2
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDeltaEta)] += patatrack_DeltaEta[tau][item] * patatrack_pt[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDeltaPhi)] += patatrack_DeltaPhi[tau][item] * patatrack_pt[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDz)] += patatrack_dz[tau][item] * patatrack_pt[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackDxy)] += patatrack_dxy[tau][item] * patatrack_pt[tau][item]
-            if( patatrack_vert_ptv2[tau][item]>-20):
-                CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertPtv2)] += patatrack_vert_ptv2[tau][item] * patatrack_pt[tau][item]
-            if(patatrack_chi2[tau][item]>=0 and patatrack_ndof[tau][item]>0):
-                    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChi2OverNdof)]+=  (patatrack_chi2[tau][item]/patatrack_ndof[tau][item])*patatrack_pt[tau][item]
-                    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)]+=  patatrack_pt[tau][item]
-            if(patatrack_vert_chi2[tau][item]>=0 and patatrack_vert_ndof[tau][item]>0):
-                CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertChi2OverNdof)]+=  (patatrack_vert_chi2[tau][item]/patatrack_vert_ndof[tau][item])*patatrack_pt[tau][item]
-            #    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSumForPositiveChi2Vertex)]+=  patatrack_pt[tau][item]
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtStdDev)]+=  (patatrack_pt[tau][item])**2
-            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackSize)]+= 1
+            CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackNdof)] += patatrack_ndof[tau][item] * patatrack_pt[tau][item]
             if(patatrack_hasVertex[tau][item]>0):
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackSizeWithVertex)]+= 1
                 CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSumWithVertex)]+= patatrack_pt[tau][item]
+            # CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertNdof)] += patatrack_vert_ndof[tau][item] * patatrack_pt[tau][item]
+            #if( patatrack_vert_ptv2[tau][item]>=0):
+            #    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertPtv2)] += patatrack_vert_ptv2[tau][item] * patatrack_pt[tau][item]
+            #if( patatrack_vert_z[tau][item]>-20):
+            #    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertZ)] += patatrack_vert_z[tau][item] * patatrack_pt[tau][item]
+            #if(patatrack_vert_chi2[tau][item]>=0 and patatrack_vert_ndof[tau][item]>0):
+            #    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatavertChi2OverNdof)]+=  (patatrack_vert_chi2[tau][item]/patatrack_vert_ndof[tau][item])*patatrack_pt[tau][item]
+            #    CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSumForPositiveChi2Vertex)]+=  patatrack_pt[tau][item]
+        # 4.1 calculate patatrack PtStdDev
+        CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] - (CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]**2/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]-1) , 0)
+
         # normalize variables
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaEta)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaPhi)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaPhi)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDeltaPhi)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDxy)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDxy)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDxy)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDz)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDz)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackDz)])
-        CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)])
+
+        CellGrid[tau,:,:,np.intp(NNInputs.PatatrackNdof)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatatrackNdof)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackNdof)])
+
+        #CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)])
+
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)])
-        CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)], CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)])
-        CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtStdDev)] - (CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]**2/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSize)]-1) , 0)
+
+        #CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSumForPositiveChi2)], CellGrid[tau,:,:,np.intp(NNInputs.PatavertChi2OverNdof)])
+
 
     return CellGrid
 
