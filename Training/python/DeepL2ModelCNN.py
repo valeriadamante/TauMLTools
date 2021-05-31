@@ -35,9 +35,11 @@ args = parser.parse_args()
 dir_dict = {} # add also pccms65
 dir_dict["cmssimphase2"]={}
 dir_dict["cmssimphase2"]["data"]="/home/valeria/DataSetTraining/"
+dir_dict["cmssimphase2"]["model"]="/home/valeria/model/"
 dir_dict["cmssimphase2"]["output"]="/home/valeria/output/"
 dir_dict["local"]={}
 dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
+dir_dict["local"]["model"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/model/"
 dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
 # ******** Define file & tuple names ********
 absolute_path =  dir_dict[args.machine]["data"]
@@ -48,6 +50,7 @@ outFileNorm = absolute_path+args.output_fileNorm
 dictFile = absolute_path+args.dict_file
 MCTruthFile = absolute_path+args.McTruth_file
 WeightsFile = absolute_path+args.Weights_file
+modelDir = dir_dict[args.machine]["model"]
 outDir = dir_dict[args.machine]["output"]
 if not os.path.exists(outDir):
     os.mkdir(outDir)
@@ -89,7 +92,7 @@ else:
     weights = np.load(WeightsFile)
 # ****** Define CNN params ******
 params = {
-    'num_dense_layers':4,
+    'num_dense_layers':3,
     'num_CNN1x1_layers':4,
     'num_CNN2x2_layers':4,
     'activation_dense':'relu',
@@ -98,7 +101,6 @@ params = {
     'nFilters_dense_0':40,
     'nFilters_dense_1':40,
     'nFilters_dense_2':20,
-    'nFilters_dense_3':1,
     'nFilters_CNN1x1_0':80,
     'nFilters_CNN1x1_1':60,
     'nFilters_CNN1x1_2':40,
@@ -107,14 +109,15 @@ params = {
     'nFilters_CNN2x2_1':20,
     'nFilters_CNN2x2_2':20,
     'nFilters_CNN2x2_3':40,
-    'dropout_dense_layers':0.2,
-    'dropout_CNN1x1_layers':0.2,
-    'dropout_CNN2x2_layers':0.2,
-    'n_units' : len(CellGridMatrix[0,0,0]),
+    'dropout_dense_layers':0,#0.2,
+    'dropout_CNN1x1_layers':0,#0.2,
+    'dropout_CNN2x2_layers':0,#0.2,
+    #'n_units' : len(CellGridMatrix[0,0,0]),
     'batch_size':200,
     'train_fraction': 0.6102414433536747,
     'validation_fraction': 0.19474661713982488,
-    'learning_rate':0.002,
+    #'learning_rate':0.002,
+    'learning_rate':0.001,
     'monitor_es':'val_loss',
     'patience_es':10,
     'epochs':100000,
@@ -139,11 +142,11 @@ x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrai
 # ***** create model directory *****
 #{}
 #file_suffix =
-file_suffix=("{}D{}CNN1{}CNN2_{:.2f}Dropout_{:.3f}LearningRate").format(params['num_dense_layers'],params['num_CNN1x1_layers'],params['num_CNN2x2_layers'],params['dropout_dense_layers'],params['learning_rate'])
+file_suffix=("model_{}D{}CNN1{}CNN2_{:.2f}Dropout_{:.4f}LearningRate").format(params['num_dense_layers'],params['num_CNN1x1_layers'],params['num_CNN2x2_layers'],params['dropout_dense_layers'],params['learning_rate'])
 print(file_suffix)
 file_suffix = file_suffix.replace(".","p")
 
-model_directory=outDir+"/model_"+file_suffix
+model_directory=modelDir+file_suffix
 if not os.path.exists(model_directory):
     os.mkdir(model_directory)
 
@@ -184,7 +187,7 @@ if args.verbose>0:
 #  - loss - optimizer - compile model
 
 # ******* define model *******
-model_path = model_directory+"/model_"+file_suffix
+model_path = model_directory+"/"+file_suffix
 if os.path.exists(model_path):
     print(("{} already exists").format(model_path))
     #continue
@@ -192,9 +195,10 @@ model = CNNModel(params)
 #predictions = model.call(x_train).numpy()
 loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 #loss_fn(y_train, predictions).numpy()
-opt = tf.keras.optimizers.Adam( learning_rate=params['learning_rate'],)
+opt = tf.keras.optimizers.Adam(learning_rate=params['learning_rate'])
+#model.build([ None ] + list(x_train.shape[1:]))
+model(x_train[0:2,:,:,:])
 model.compile(optimizer=opt,loss=loss_fn,metrics=['accuracy'])
-model.build([ None ] + list(x_train.shape[1:]))
 #print(model(x_val[0:2, :, :, :]))
 #model.summary()
 logfile.write(sepstr+"\n")
@@ -208,9 +212,9 @@ logfile.write(sepstr+"\n")
 # ******* Train the model *******
 if(args.verbose>0):
     print("preparing training")
-csvfile=model_directory+"/model_"+file_suffix+".csv"
+csvfile=model_directory+"/"+file_suffix+".csv"
 #model_path= model_directory+"/model_"+file_suffix+".h5"
-model_path= model_directory+"/model_"+file_suffix
+model_path= model_directory+"/"+file_suffix
 # prepare training
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor=params['monitor_es'], patience=params['patience_es'])
 csv_logger = tf.keras.callbacks.CSVLogger(csvfile, separator=',', append=False )

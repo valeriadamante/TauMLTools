@@ -34,7 +34,7 @@ files_directories = {
 
 parser = argparse.ArgumentParser()
 #parser.add_argument('machine', type=str, default="local", choices=["lxplus", "local"])
-parser.add_argument('--sample', required=True, type=str, help= "input reference file", choices=['DY', 'QCD_Pt-15to3000', 'QCD_Pt-15to7000', 'QCD_Pt_170to300', 'QCD_Pt_300to470', 'QCD_Pt_30to50', 'QCD_Pt_470to600', 'QCD_Pt_50to80', 'QCD_Pt_600oInf', 'QCD_Pt_80to120', 'TT', 'VBF', 'WJets', 'Zprime'])
+parser.add_argument('--sample', required=True, type=str, help= "input reference file", choices=['DY', 'QCD_Pt-15to3000', 'QCD_Pt-15to7000', 'QCD_Pt_170to300', 'QCD_Pt_120to170', 'QCD_Pt_300to470', 'QCD_Pt_30to50', 'QCD_Pt_470to600', 'QCD_Pt_50to80', 'QCD_Pt_600oInf', 'QCD_Pt_80to120', 'TT', 'VBF', 'WJets', 'Zprime', 'EphemeralHLTPhysics1', 'EphemeralHLTPhysics2', 'EphemeralHLTPhysics3', 'EphemeralHLTPhysics4', 'EphemeralHLTPhysics5', 'EphemeralHLTPhysics6', 'EphemeralHLTPhysics7', 'EphemeralHLTPhysics8'])
 parser.add_argument('--n_threads', required=False, type=int, default=1, help='Number of threads')
 parser.add_argument('--start_entry', required=False, type=int, default=0 , help='start entry')
 parser.add_argument('--end_entry', required=False, type=str, default="std::numeric_limits<Long64_t>::max()", help='end entry')
@@ -67,11 +67,32 @@ def search_files(inputs):
 
 search_files(inputs)
 print directory
+#"isQCDDataVBF", "0 = QCD; 1 = TT,DY,ZPrime; 2 = VBF; 3=Data"
 
-
-isQCD = "false"
-if "QCD" in args.sample:
-    isQCD = "true"
+isQCD_dict = {'DY':'1',
+                'QCD_Pt-15to3000':'0',
+                'QCD_Pt-15to7000':'0',
+                'QCD_Pt_170to300':'0',
+                'QCD_Pt_120to170':'0',
+                'QCD_Pt_300to470':'0',
+                'QCD_Pt_30to50':'0',
+                'QCD_Pt_470to600':'0',
+                'QCD_Pt_50to80':'0',
+                'QCD_Pt_600oInf':'0',
+                'QCD_Pt_80to120':'0',
+                'TT':'1',
+                'VBF':'2',
+                'WJets':'1',
+                'Zprime':'2',
+                'EphemeralHLTPhysics1':'3',
+                'EphemeralHLTPhysics2':'3',
+                'EphemeralHLTPhysics3':'3',
+                'EphemeralHLTPhysics4':'3',
+                'EphemeralHLTPhysics5':'3',
+                'EphemeralHLTPhysics6':'3',
+                'EphemeralHLTPhysics7':'3',
+                'EphemeralHLTPhysics8':'3'}
+isQCD = isQCD_dict[args.sample]
 
 #print directory + "\n"
 k=1

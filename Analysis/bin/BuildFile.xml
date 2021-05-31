@@ -2,4 +2,23 @@
     <use name="boost_program_options"/>
     <use name="rootmath"/>
     <use name="TauMLTools/Core"/>
-</bin> 
+</bin>
+<bin name="DataSetProducer" file="ProduceDataSet.cxx">
+    <use name="boost_program_options"/>
+    <use name="rootmath"/>
+    <use name="TauMLTools/Core"/>
+</bin>
+
+<bin name="IntermediateTupleProducer" file="IntermediateTupleProducer.cxx">
+    <use name="boost_program_options"/>
+    <use name="rootmath"/>
+    <use name="TauMLTools/Core"/>
+</bin>
+
+<!-- <bin name="PlotProducer" file="PlotProducer.cxx">
+    <use name="boost_program_options"/>
+    <use name="rootmath"/>
+    <use name="TauMLTools/Core"/>
+    <use name="TauMLTools/Analysis/"/>
+</bin>
+-->

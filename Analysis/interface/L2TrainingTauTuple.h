@@ -31,21 +31,25 @@
     VAR(UInt_t, run) /* run number */ \
     VAR(UInt_t, lumi) /* lumi section */ \
     VAR(ULong64_t, evt) /* event number */ \
+    VAR(bool, defaultDiTauPath_result) /*  */ \
+    VAR(Float_t, defaultDiTauPath_lastModuleIndex) /* gen event weight */ \
     VAR(Float_t, genEventWeight) /* gen event weight */ \
     VAR(Int_t, sampleType) /* type of the sample (MC, Embedded or Data) */ \
     /* Gen lepton with the full decay chain */ \
+    VAR(Int_t, genLepton_index) /* genlep index candidate*/ \
     VAR(Int_t, genLepton_kind) /* kind of the gen lepton:
                                               Electron = 1, Muon = 2, TauElectron = 3, TauMuon = 4, Tau = 5, Other = 6 */\
     VAR(Int_t, genLepton_charge) /* charge of the gen lepton */ \
     VAR4(Float_t, genLepton_vis_pt, genLepton_vis_eta, genLepton_vis_phi, genLepton_vis_mass) /* visible 4-momentum of
                                                                                                  the gen lepton */ \
     /* L1 objects */ \
-    VAR(Float_t, l1Tau_pt) /* L1 pt candidate*/ \
-    VAR(Float_t, l1Tau_eta) /* L1 eta candidate*/ \
-    VAR(Float_t, l1Tau_phi) /* L1 phi candidate*/ \
-    VAR(Float_t, l1Tau_mass) /* L1 mass candidate*/ \
-    VAR(int, l1Tau_hwIso) /* L1 hwIso candidate*/ \
-    VAR(int, l1Tau_hwQual) /* L1 quality candidate*/ \
+    VAR(Int_t, l1Tau_index) /* L1 index candidate*/ \
+    VAR(Float_t, l1Tau_pt) /* L1 pt candidate ! */ \
+    VAR(Float_t, l1Tau_eta) /* L1 eta candidate ! */ \
+    VAR(Float_t, l1Tau_phi) /* L1 phi candidate ! */ \
+    VAR(Float_t, l1Tau_mass) /* L1 mass candidate ?! */ \
+    VAR(int, l1Tau_hwIso) /* L1 hwIso candidate ! */ \
+    VAR(int, l1Tau_hwQual) /* L1 quality candidate ?! */ \
     VAR(int, l1Tau_towerIEta) /* L1 towerIEta candidate*/ \
     VAR(int, l1Tau_towerIPhi) /* L1 towerIPhi candidate*/ \
     VAR(int, l1Tau_rawEt) /* L1 rawEt candidate*/ \
@@ -53,19 +57,19 @@
     VAR(bool, l1Tau_hasEM) /* L1 hasEM candidate*/ \
     VAR(bool, l1Tau_isMerged) /* L1 isMerged candidate*/ \
     /* CaloRecHits candidates */ \
-    ECAL_VAR(Float_t, rho) /* */ \
-    ECAL_VAR(Float_t, eta) /* */ \
-    ECAL_VAR(Float_t, phi) /* */ \
-    ECAL_VAR(Float_t, energy) /* */ \
-    ECAL_VAR(Float_t, time) /* */ \
+    ECAL_VAR(Float_t, rho) /* ! */ \
+    ECAL_VAR(Float_t, eta) /* Delta ! */ \
+    ECAL_VAR(Float_t, phi) /* Delta !  */ \
+    ECAL_VAR(Float_t, energy) /* ! */ \
+    ECAL_VAR(Float_t, time) /* ! */ \
     ECAL_VAR(ULong64_t, detId) /* */ \
-    ECAL_VAR(Float_t, chi2) /* */ \
-    ECAL_VAR(Float_t, energyError) /* */ \
-    ECAL_VAR(Float_t, timeError) /* */ \
+    ECAL_VAR(Float_t, chi2) /* ! */ \
+    ECAL_VAR(Float_t, energyError) /* ?controlla ! */ \
+    ECAL_VAR(Float_t, timeError) /* ?controlla ! */ \
     ECAL_VAR(uint32_t, flagsBits) /* */ \
-    ECAL_VAR(Bool_t, isRecovered) /* */ \
-    ECAL_VAR(Bool_t, isTimeValid) /* */ \
-    ECAL_VAR(Bool_t, isTimeErrorValid) /* */ \
+    ECAL_VAR(Bool_t, isRecovered) /* ved */ \
+    ECAL_VAR(Bool_t, isTimeValid) /* ved */ \
+    ECAL_VAR(Bool_t, isTimeErrorValid) /* ved */ \
     HBHE_VAR(Float_t, rho) /* */ \
     HBHE_VAR(Float_t, eta) /* */ \
     HBHE_VAR(Float_t, phi) /* */ \
@@ -137,3 +141,26 @@ INITIALIZE_TREE(tau_train_tuple, TauTrainTuple, L2TRAINTAU_DATA)
 #undef CALO_TAU_VAR
 #undef PATATRACK_VAR
 #undef PATAVERT
+/*
+namespace tau_train_tuple {
+
+struct L2TrainTupleEntryId {
+    UInt_t run;
+    UInt_t lumi;
+    ULong64_t evt;
+    Int_t genLepton_index, l1Tau_index;
+
+    L2TrainTupleEntryId() {}
+    explicit L2TrainTupleEntryId(const Tau& tau) :
+        run(tau.run), lumi(tau.lumi), evt(tau.evt), genLepton_index(tau.genLepton_index), l1Tau_index(tau.l1Tau_index) {}
+
+    bool operator<(const L2TrainTupleEntryId& other) const
+    {
+        if(run != other.run) return run < other.run;
+        if(lumi != other.lumi) return lumi < other.lumi;
+        if(evt != other.evt) return evt < other.evt;
+        if(genLepton_index != other.genLepton_index) return genLepton_index < other.genLepton_index;
+        return l1Tau_index < other.l1Tau_index;
+    }
+};
+}*/

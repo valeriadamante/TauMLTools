@@ -20,16 +20,10 @@ def LoadIdFrames(file_name, id_collections):
         for col in id_collections:
             #id_vector += entry #getattr(entry, col + '_hashes')
             name_vector = getattr(entry, col + '_names')
-            #if id_vector.size() != name_vector.size():
-            #    raise RuntimeError("Inconsistent information in aux tuple")
             for n in range(name_vector.size()):
-                #id = int(id_vector.at(n))
                 name = str(name_vector.at(n))
-                #if id in id_values[col]:
-                #    raise RuntimeError("Duplicated id entry")
-                if name in name_values[col]:
-                    continue
-                    #raise RuntimeError("Duplicated name entry")
+                #if name in name_values[col]:
+                #    continue 
                 id_values[col].append(n)
                 name_values[col].append(name)
     data_frames = {}
@@ -54,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('dataId', type=str, help="dataId")
     args = parser.parse_args()
 
-    id_collections = ['module'] #['dataset' ] #, 'sample']
+    id_collections = ['module']
     data_frames = LoadIdFrames(args.input, id_collections)
     id_found = False
     for col in id_collections:

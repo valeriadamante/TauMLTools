@@ -174,8 +174,6 @@ class CNNModel(Model):
             self.batch_norm_dense.append(tf.keras.layers.BatchNormalization(name='batch_normalization{}'.format(i)))
             if params['dropout_dense_layers'] > 0:
                 self.dropout_dense.append(tf.keras.layers.Dropout(params['dropout_dense_layers'],name='dropout_dense_{}'.format(i)))
-
-
         self.final_dense = tf.keras.layers.Dense(1, activation="sigmoid", name='output')
     @tf.function
     def call(self, x):
@@ -195,13 +193,14 @@ class CNNModel(Model):
                 x = self.activation_cnn_2x2[i](x)
             if len(self.dropout_cnn_2x2) > i:
                 x = self.dropout_cnn_2x2[i](x)
+        shape_of_x = tf.shape(x)
+        x = tf.reshape(x, (shape_of_x[0],shape_of_x[1]*shape_of_x[2]*shape_of_x[3]))
         for i in range(len(self.dense)):
             x = self.dense[i](x)
             if len(self.batch_norm_dense) > i:
-                x = self.batch_norm_dense[i](x) 
+                x = self.batch_norm_dense[i](x)
             if len(self.dropout_dense) > i:
                 x = self.dropout_dense[i](x)
-        last_pre = x
         x = self.final_dense(x)
         return x
 
