@@ -183,18 +183,22 @@ class CNNModel(Model):
             x = self.cnn_1x1[i](x)
             if len(self.batch_norm_cnn_1x1) > i:
                 x = self.batch_norm_cnn_1x1[i](x)
+            if len(self.activation_cnn_1x1) > i:
+                x = self.activation_cnn_1x1[i](x)
             if len(self.dropout_cnn_1x1) > i:
                 x = self.dropout_cnn_1x1[i](x)
         for i in range(len(self.cnn_2x2)):
             x = self.cnn_2x2[i](x)
             if len(self.batch_norm_cnn_2x2) > i:
                 x = self.batch_norm_cnn_2x2[i](x)
+            if len(self.activation_cnn_2x2) > i:
+                x = self.activation_cnn_2x2[i](x)
             if len(self.dropout_cnn_2x2) > i:
                 x = self.dropout_cnn_2x2[i](x)
         for i in range(len(self.dense)):
             x = self.dense[i](x)
             if len(self.batch_norm_dense) > i:
-                x = self.batch_norm_dense[i](x)
+                x = self.batch_norm_dense[i](x) 
             if len(self.dropout_dense) > i:
                 x = self.dropout_dense[i](x)
         last_pre = x

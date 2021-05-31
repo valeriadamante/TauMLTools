@@ -29,6 +29,7 @@ parser.add_argument('--input_tuple', required=False, type=str, default='L2TauTra
 parser.add_argument('--n_cellsX', required=False, type=int, default=5, help='number of cells along X dir')
 parser.add_argument('--n_cellsY', required=False, type=int, default=5, help='number of cells along Y dir')
 parser.add_argument('--verbose', required=False, type=int, default=0)
+parser.add_argument('--gpu', required=False, type=bool, default=False)
 args = parser.parse_args()
 # ****** Define directories *******
 dir_dict = {} # add also pccms65
@@ -54,6 +55,12 @@ if not os.path.exists(outDir):
 n_cellsX = args.n_cellsX
 n_cellsY = args.n_cellsY
 nVars = len(NNInputs)
+# ****** run on GPU ******
+if(args.gpu==True):
+    physical_devices = tf.config.list_physical_devices('GPU')
+    if len(physical_devices) == 0:
+        raise RuntimeError("Can't find any GPU device")
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
 # ***** Load CellGrid Matrix *******
 if(args.verbose)>0:
     print("loading CellGridMatrix")
@@ -182,13 +189,13 @@ if os.path.exists(model_path):
     print(("{} already exists").format(model_path))
     #continue
 model = CNNModel(params)
-predictions = model.call(x_train).numpy()
+#predictions = model.call(x_train).numpy()
 loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 #loss_fn(y_train, predictions).numpy()
 opt = tf.keras.optimizers.Adam( learning_rate=params['learning_rate'],)
 model.compile(optimizer=opt,loss=loss_fn,metrics=['accuracy'])
-model.build(x_train.shape)
-print(model(x_val[0:2, :, :, :]))
+model.build([ None ] + list(x_train.shape[1:]))
+#print(model(x_val[0:2, :, :, :]))
 #model.summary()
 logfile.write(sepstr+"\n")
 logfile.write("\t \t \t model summary \n")
@@ -202,8 +209,8 @@ logfile.write(sepstr+"\n")
 if(args.verbose>0):
     print("preparing training")
 csvfile=model_directory+"/model_"+file_suffix+".csv"
-model_path= model_directory+"/model_"+file_suffix+".h5"
-#model_path= model_directory+"/model_"+file_suffix
+#model_path= model_directory+"/model_"+file_suffix+".h5"
+model_path= model_directory+"/model_"+file_suffix
 # prepare training
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor=params['monitor_es'], patience=params['patience_es'])
 csv_logger = tf.keras.callbacks.CSVLogger(csvfile, separator=',', append=False )
