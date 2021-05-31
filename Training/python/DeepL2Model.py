@@ -12,37 +12,74 @@ import matplotlib
 matplotlib.use('agg')
 import pylab as plt
 from sklearn.metrics import classification_report, roc_auc_score, accuracy_score, f1_score, confusion_matrix
+import argparse
 import os
-# define useful quantities
-absolute_path = '/home/valeria/'
-fileName = 'DataSetTrainingWeight.root'
-tupleName = 'L2TauTrainTuple'
-flatVars = ['nVertices','l1Tau_pt', 'l1Tau_eta', 'l1Tau_hwIso']
-vecVars = {
-        'caloRecHit_e':'energy',
-        'caloRecHit_had':'energy',
-        'patatrack':'pt'
-}
-# create output directories
-output_directory = 'output'
-if not os.path.exists(output_directory):
-    os.mkdir(output_directory)
-
-# create all vars array, mctruth array and feature matrix
-awkArray = GetAwkArray(absolute_path+fileName, tupleName)
-if not os.path.exists(absolute_path+'MCTruth.npy'):
-    print("file "+absolute_path+"MCTruth.npy exists and taking data from there")
-    MCTruth = GetMCTruth(awkArray, 'genLepton_isTau')
-else:
-    MCTruth = np.load(absolute_path+'MCTruth.npy')
-if not os.path.exists(absolute_path+'FeatMatrix.npy'):
+parser = argparse.ArgumentParser()
+parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
+parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
+parser.add_argument('--input_file', required=False, type=str, default='DataSetTrainingWeight.root', help='input file name')
+parser.add_argument('--input_tuple', required=False, type=str, default='L2TauTrainTuple', help='input tree name')
+parser.add_argument('--featMatrix_file', required=False, type=str, default='FeatMatrix.npy', help='output file name')
+parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
+parser.add_argument('--Weights_file', required=False, type=str, default='weights.npy', help='output file name')
+parser.add_argument('--verbose', required=False, type=int, default=0)
+args = parser.parse_args()
+# ****** Define directories *******
+dir_dict = {} # add also pccms65
+dir_dict["cmssimphase2"]={}
+dir_dict["cmssimphase2"]["data"]="/home/valeria/DataSetTraining/"
+dir_dict["cmssimphase2"]["output"]="/home/valeria/output/"
+dir_dict["local"]={}
+dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
+dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/outputProva/"
+# ******** Define file & tuple names ********
+absolute_path =  dir_dict[args.machine]["data"]
+treeName = args.input_tuple
+inFile = absolute_path+args.input_file
+featMatrixFile = absolute_path+args.featMatrix_file
+MCTruthFile = absolute_path+args.McTruth_file
+WeightsFile = absolute_path+args.Weights_file
+outDir = dir_dict[args.machine]["output"]
+if not os.path.exists(outDir):
+    os.mkdir(outDir)
+# ***** Load Feat Matrix ******
+if not os.path.exists(featMatrixFile):
+    flatVars = ['nVertices','l1Tau_pt', 'l1Tau_eta', 'l1Tau_hwIso']
+    vecVars = {
+            'caloRecHit_e':'energy',
+            'caloRecHit_had':'energy',
+            'patatrack':'pt'
+    }
+    awkArray = GetAwkArray(inFile, treeName)
     featMatrix = GetFeatureMatrix(awkArray, flatVars, vecVars, False)
 else:
-    print("file "+absolute_path+"FeatMatrix.npy exists and taking data from there")
-    featMatrix = np.load(absolute_path+'FeatMatrix.npy')
-# #print the array
-# print(featMatrix)
-# print(MCTruth)
+    print(("file {} exists and taking data from there").format(featMatrixFile))
+    featMatrix = np.load(featMatrixFile)
+# ***** Load MCTruth Matrix *******
+if(args.verbose)>0:
+    print("Loading MCTruthFile")
+if not os.path.exists(MCTruthFile):
+    awkArray = GetAwkArray(inFile, treeName)
+    MCTruth = GetMCTruth(awkArray, 'genLepton_isTau')
+    np.save(MCTruthFile, MCTruth)
+else:
+    if(args.verbose)>0:
+        print(("file {} exists and taking data from there").format(MCTruthFile))
+    MCTruth = np.load(MCTruthFile)
+# ****** Load Weights matrix *******
+if not os.path.exists(WeightsFile):
+    if(args.verbose)>0:
+        print("Loading WeightsFile")
+    awkArray = GetAwkArray(inFile, treeName)
+    weights = GetMCTruth(awkArray, 'weight')
+    np.save(WeightsFile, weights)
+else:
+    if(args.verbose)>0:
+        print(("file {} exists and taking data from there").format(WeightsFile))
+    weights = np.load(WeightsFile)
+
+# create all vars array, mctruth array and feature matrix
+
 params = {
     'activation_dense':'relu',
     'num_units_den_layers':int(2*len(featMatrix[0])/0.8),
@@ -58,13 +95,11 @@ params = {
     'epochs':100000,
 }
 sepstr = '*'*80
-
-# define train, test and validation samples
-print("preparing train/test/val samples")
+# ****** Get train - test - validation samples ********
+if(args.verbose)>0:
+    print("preparing train/test/val samples")
 number_of_batches = len(MCTruth)/params['batch_size']
-x_train, y_train, x_test, y_test, x_val, y_val = GetTrainTestFraction(MCTruth, featMatrix, params['train_fraction'],
-                                                                      params['validation_fraction'], False)
-w_train, w_test, w_val = GetTrainTestWeight(awkArray, params['train_fraction'],params['validation_fraction'])
+x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrainTestFraction(MCTruth, featMatrix, weights, params['train_fraction'],  params['validation_fraction'], args.verbose) 
 for ly in range(5,11):
     for lr in np.arange(0.001, 0.02, 0.002):
         for do in np.arange(0.2, 0.5, 0.1):
@@ -76,9 +111,11 @@ for ly in range(5,11):
             params['num_den_layers'] = ly
             # creating specific model files_directoriesmodel_directory="output/model_"+file_suffix
 
-            file_suffix ="{}Layers_{:.2f}Dropout_{:.3f}LearningRate".format(params['num_den_layers'],params['dropout_rate_den_layers'],params['learning_rate']).replace(".","p")
 
-            model_directory=output_directory+"/model_"+file_suffix
+            file_suffix ="{}Layers_{:.2f}Dropout_{:.3f}LearningRate".format(params['num_den_layers'],params['dropout_rate_den_layers'],params['learning_rate']).replace(".","p")
+            print(file_suffix)
+
+            model_directory=outDir+"/model_"+file_suffix
             if not os.path.exists(model_directory):
                 os.mkdir(model_directory)
 
@@ -90,13 +127,15 @@ for ly in range(5,11):
             if not os.path.exists(history_directory):
                 os.mkdir(history_directory)
 
-            plot_directory = output_directory+"/plots"
+            plot_directory = outDir+"/plots"
             if not os.path.exists(plot_directory):
                 os.mkdir(plot_directory)
 
             var_directory = model_directory+"/vars"
             if not os.path.exists(var_directory):
                 os.mkdir(var_directory)
+
+
             # creating files to be written
 
             logfile = open(log_directory+"/output_"+file_suffix+".log","w+")
@@ -163,7 +202,6 @@ for ly in range(5,11):
             pickle.dump(history.history,f2)
             f2.close()
             # make predictions for test sample
-            print("preparing training")
             '''
             y_pred = model.predict(x_test)
             y_pred.resize(len(y_test))

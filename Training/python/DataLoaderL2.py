@@ -28,73 +28,22 @@ vecVars = {
     # class : [variable to get size and sum, variables to make weightedSum]
     "Patatracks " : []
 }
-def getCellGridMatrix(awkArray, flatVars, vecVars, n_cellsX, n_cellsY, verbose=False):
-    print("writing feature matrix")
-    nVars = 27
-    nEvents = len(getattr(awkArray, flatVars[0]))
-    dPhi_min = -0.5
-    dPhi_max = 0.5
-    dEta_min = -0.5
-    dEta_max = 0.5
-    dPhi_witdh = (dPhi_max-dPhi_min)/n_cellsX
-    dEta_witdh = (dEta_max-dEta_min)/n_cellsY
-    nEvents = len(variableToAdd)
-    CellGrid = np.zeros((nEvents, n_cellsX, n_cellsY, n_vars))
-    for i in range(0,n_cellsX):
-        dEta_current = dEta_min + i * dEta_witdh
-        for j in range(0, n_cellsY):
-            dPhi_current = dPhi_min + j * dPhi_witdh
-            if(verbose):
-                print(('dEta  = {}, dPhi = {}').format(dEta_current, dPhi_current))
-            # define variable index
-            varIndex = 0
-            for var in flatVars:
-                # 1. copy global variables : nVertex - l1Tau_pt - l1Tau_eta - l1Tau_phi - l1Tau_hwIso
-                CellGrid[:, i, j, varIndex] = getattr(awkArray, var)
-            varIndex = varIndex + len(flatVars)
-            for var in vecVars:
-                dPhi_cond0 = getattr(getattr(awkArray, var),'DeltaPhi')
-                dEta_cond0 = getattr(getattr(awkArray, var),'DeltaEta')
-                # 2. sum of objects within cell
-                VarToSumSize = getattr(getattr(awkArray, var),var[0])
 
-                if(verbose):
-                   print('applying first condition')
-                cond1_dPhi = (dPhi_cond0)>=dPhi_current
-                dPhi_cond1 = dPhi_cond0[cond1_dPhi]
-                VarToSumSize_condPhi1=VarToSumSize[cond1_dPhi]
-
-                cond1_dEta = (dEta_cond0)>=dEta_current
-                dEta_cond1 = dEta_cond0[cond1_dEta]
-                VarToSumSize_condEta1=VarToSumSize_condPhi1[cond1_dEta]
-
-                if(verbose):
-                   print('applying second condition')
-                cond2_dPhi = (dPhi_cond0)<dPhi_current+dPhi_width
-                dPhi_cond2 = dPhi_cond0[cond2_dPhi]
-                VarToSumSize_condPhi2=VarToSumSize_condEta1[cond2_dPhi]
-
-                cond2_dEta = (dEta_cond0)<dEta_current+dEta_width
-                dEta_cond2 = dEta_cond0[cond2_dEta]
-                VarToSumSize_condEta2=VarToSumSize_condPhi2[cond2_dEta]
-
-                # get the sum and the size of each vector
-                if(verbose):
-                    print('defining sum and size arrays')
-                arr_sum = np.zeros(nEvents)
-                arr_size = np.zeros(nEvents)
-                if(verbose):
-                    print('filling sum and size arrays')
-
-                for v in range(0, len(VarToSumSize_condEta2)-1):
-                    sumen = ak.sum(VarToSumSize_condEta2[v])
-                    arr_sum[v] = sumen
-                    sizen = ak.size(VarToSumSize_condEta2[v])
-                    arr_size[v] = sizen
-                CellGrid[:, i, j, varIndex] = arr_sum
-                varIndex +=1
-                CellGrid[:, i, j, varIndex] = arr_size
-
+def GetTrainTestFraction(MCTruth, featMatrix, weights, trainFraction, valFraction, verbose):
+    testFraction = 1 - (trainFraction+valFraction)
+    nEvents = len(MCTruth)
+    nTrain = int(round(nEvents * trainFraction, 0))
+    nVal = nTrain+int(round(nEvents * valFraction, 0))
+    nTest = nVal+int(round(nEvents * testFraction, 0))
+    if verbose>0:
+        print("train fraction = ", trainFraction, "\ntest fraction = ", testFraction)
+        print("total events = ", nEvents, "\ntrain events = ", nTrain, "\ntest events = ",
+                  nTest, "\nvalidation events = ", nVal)
+        print("train+test+validation events = ",  nTest)
+    x_train,y_train,w_train =  featMatrix[0:nTrain],MCTruth[0:nTrain], weights[0:nTrain]
+    x_val, y_val,w_val  = featMatrix[nTrain:nVal],MCTruth[nTrain:nVal], weights[nTrain:nVal]
+    x_test,y_test,w_test = featMatrix[nVal:nEvents],MCTruth[nVal:nEvents], weights[nVal:nEvents]
+    return x_train,y_train,w_train,x_test,y_test,w_test,x_val,y_val,w_val
 
 def getArraySumdRbins(allVars, allVarsIndex, variableToAdd, deltaR, verbose =False):
     dR_bin = [0.,0.1,0.2,0.3,0.4,0.5]
@@ -162,21 +111,7 @@ def GetFeatureMatrix(awkArray, flatVars, vecVars, verbose=False):
     #np.save('/home/valeria/FeatMatrix.npy', allVars)
     return allVars
 
-def GetTrainTestFraction(MCTruth, featMatrix, trainFraction, valFraction, verbose = False):
-    testFraction = 1 - (trainFraction+valFraction)
-    nEvents = len(MCTruth)
-    nTrain = int(round(nEvents * trainFraction, 0))
-    nVal = nTrain+int(round(nEvents * valFraction, 0))
-    nTest = nVal+int(round(nEvents * testFraction, 0))
-    if verbose:
-        print("train fraction = ", trainFraction, "\ntest fraction = ", testFraction)
-        print("total events = ", nEvents, "\ntrain events = ", nTrain, "\ntest events = ",
-                  nTest, "\nvalidation events = ", nVal)
-        print("train+test+validation events = ",  nTest)
-    x_train,y_train = featMatrix[0:nTrain],MCTruth[0:nTrain]
-    x_val,y_val  = featMatrix[nTrain:nVal],MCTruth[nTrain:nVal]
-    x_test,y_test = featMatrix[nVal:nEvents],MCTruth[nVal:nEvents]
-    return x_train,y_train,x_test,y_test,x_val,y_val
+
 
 
 def GetTestSubSample(x_test,y_test,w_test, low_threshold, high_threshold, var_pos):
