@@ -1,95 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 import tensorflow as tf
-import uproot
 import awkward as ak
 import pickle
 import numpy as np
 import json
-from DataLoaderL2ForCNN import *
-import matplotlib
-matplotlib.use('agg')
-import pylab as plt
-from sklearn.metrics import classification_report, roc_auc_score, accuracy_score, f1_score, confusion_matrix
-import os
-
+from produceGridDatasets import *
 import argparse
 import os
 parser = argparse.ArgumentParser()
 parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
-parser.add_argument('--time', required=False, type=bool, default=False , help='if set to true, display time information')
+parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate'])
 parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
-parser.add_argument('--input_file', required=False, type=str, default='DataSetTrainingWeight.root', help='input file name')
-parser.add_argument('--output_file', required=False, type=str, default='CellGrid.npy', help='output file name')
-parser.add_argument('--output_fileNorm', required=False, type=str, default='CellGridNorm.npy', help='output file name')
-parser.add_argument('--dict_file', required=False, type=str, default='NormalizationDict.json', help='output file name')
+
 parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
 parser.add_argument('--Weights_file', required=False, type=str, default='weights.npy', help='output file name')
-parser.add_argument('--input_tuple', required=False, type=str, default='L2TauTrainTuple', help='input tree name')
 parser.add_argument('--n_cellsX', required=False, type=int, default=5, help='number of cells along X dir')
 parser.add_argument('--n_cellsY', required=False, type=int, default=5, help='number of cells along Y dir')
 parser.add_argument('--verbose', required=False, type=int, default=0)
 parser.add_argument('--gpu', required=False, type=bool, default=False)
 args = parser.parse_args()
-# ****** Define directories *******
-dir_dict = {} # add also pccms65
-dir_dict["cmssimphase2"]={}
-dir_dict["cmssimphase2"]["data"]="/home/valeria/DataSetTraining/"
-dir_dict["cmssimphase2"]["model"]="/home/valeria/model/"
-dir_dict["cmssimphase2"]["output"]="/home/valeria/output/"
-dir_dict["local"]={}
-dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
-dir_dict["local"]["model"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/model/"
-dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
-# ******** Define file & tuple names ********
-absolute_path =  dir_dict[args.machine]["data"]
-treeName = args.input_tuple
-inFile = absolute_path+args.input_file
-outFile = absolute_path+args.output_file
-outFileNorm = absolute_path+args.output_fileNorm
-dictFile = absolute_path+args.dict_file
-MCTruthFile = absolute_path+args.McTruth_file
-WeightsFile = absolute_path+args.Weights_file
-modelDir = dir_dict[args.machine]["model"]
-outDir = dir_dict[args.machine]["output"]
-if not os.path.exists(outDir):
-    os.mkdir(outDir)
-# ****** cell number and var definition ******
-n_cellsX = args.n_cellsX
-n_cellsY = args.n_cellsY
-nVars = len(NNInputs)
-# ****** run on GPU ******
-if(args.gpu==True):
-    physical_devices = tf.config.list_physical_devices('GPU')
-    if len(physical_devices) == 0:
-        raise RuntimeError("Can't find any GPU device")
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
-# ***** Load CellGrid Matrix *******
-if(args.verbose)>0:
-    print("loading CellGridMatrix")
-CellGridMatrix = getNormCellGridMatrix(inFile, treeName, outFile, outFileNorm, dictFile, args.time, args.n_max_events, args.verbose)
-# ***** Load MCTruth Matrix *******
-if(args.verbose)>0:
-    print("Loading MCTruthFile")
-if not os.path.exists(MCTruthFile):
-    awkArray = GetAwkArray(inFile, treeName)
-    MCTruth = GetMCTruth(awkArray, 'genLepton_isTau')
-    np.save(MCTruthFile, MCTruth)
-else:
-    if(args.verbose)>0:
-        print(("file {} exists and taking data from there").format(MCTruthFile))
-    MCTruth = np.load(MCTruthFile)
-# ****** Load Weights matrix *******
-if not os.path.exists(WeightsFile):
-    if(args.verbose)>0:
-        print("Loading WeightsFile")
-    awkArray = GetAwkArray(inFile, treeName)
-    weights = GetMCTruth(awkArray, 'weight')
-    np.save(WeightsFile, weights)
-else:
-    if(args.verbose)>0:
-        print(("file {} exists and taking data from there").format(WeightsFile))
-    weights = np.load(WeightsFile)
+
+# ***** Get cell grid Matrix *****
+kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : True, 'verbose' : args.verbose}
+CellGridMatrix = GetCellGridNormMatrix(args.machine, args.effRate, **kwArgs)
+# ***** Get MC and weights Matrices *****
+MCTruth, weights = GetMCTruthWeights(args.machine, args.McTruth_file, args.Weights_file, **kwArgs)
 # ****** Define CNN params ******
 params = {
     'num_dense_layers':3,
@@ -140,15 +76,9 @@ x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrai
 # params['num_den_layers'] = ly
 
 # ***** create model directory *****
-#{}
-#file_suffix =
-file_suffix=("model_{}D{}CNN1{}CNN2_{:.2f}Dropout_{:.4f}LearningRate").format(params['num_dense_layers'],params['num_CNN1x1_layers'],params['num_CNN2x2_layers'],params['dropout_dense_layers'],params['learning_rate'])
-print(file_suffix)
-file_suffix = file_suffix.replace(".","p")
 
-model_directory=modelDir+file_suffix
-if not os.path.exists(model_directory):
-    os.mkdir(model_directory)
+model_path = GetModelPath(args.machine, params)
+model_directory = GetModelDir(args.machine)
 
 log_directory = model_directory+"/log"
 if not os.path.exists(log_directory):
@@ -158,15 +88,12 @@ history_directory = model_directory+"/history"
 if not os.path.exists(history_directory):
     os.mkdir(history_directory)
 
-plot_directory = outDir+"/plots"
-if not os.path.exists(plot_directory):
-    os.mkdir(plot_directory)
 
 var_directory = model_directory+"/vars"
 if not os.path.exists(var_directory):
     os.mkdir(var_directory)
 # creating files to be written
-
+file_suffix = GetFileSuffix(params)
 logfile = open(log_directory+"/output_"+file_suffix+".log","w+")
 history_file_path = history_directory+"/history_"+file_suffix
 
@@ -187,7 +114,6 @@ if args.verbose>0:
 #  - loss - optimizer - compile model
 
 # ******* define model *******
-model_path = model_directory+"/"+file_suffix
 if os.path.exists(model_path):
     print(("{} already exists").format(model_path))
     #continue
@@ -204,7 +130,7 @@ model.compile(optimizer=opt,loss=loss_fn,metrics=['accuracy'])
 logfile.write(sepstr+"\n")
 logfile.write("\t \t \t model summary \n")
 logfile.write(sepstr+"\n")
-#model.summary(print_fn=lambda x: logfile.write(x + '\n'))
+model.summary(print_fn=lambda x: logfile.write(x + '\n'))
 logfile.write("\n"+sepstr+"\n")
 logfile.write("\t \t end of model summary \n")
 logfile.write(sepstr+"\n")

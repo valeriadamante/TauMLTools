@@ -10,7 +10,7 @@ from array import array
 import argparse
 from  TauMLTools.Training.python.produceGridDatasets import *
 
-
+ROOT.gStyle.SetPaintTextFormat(".2f")
 
 def beautify_plot_canvas(names, save=True):
     H_ref = 1000;
@@ -60,7 +60,7 @@ def beautify_plot_canvas(names, save=True):
     canvas.Print(("{}.pdf").format(names["outFile"]),"pdf")
     #input()
 
-def draw_AbsoluteDNNEff(names, save=True):
+def draw_AbsoluteCNNEff(names, save=True):
     H_ref = 1000;
     W_ref = 1000;
     W = W_ref
@@ -71,7 +71,6 @@ def draw_AbsoluteDNNEff(names, save=True):
     R = 0.1*W_ref
     bin_dict = {"35": {"35": [124.0, 487.0], "70": [0.0, 1.0], "40": [0.0, 1.0], "80": [0.0, 1.0], "50": [0.0, 1.0], "20": [54.0, 1794.0], "90": [0.0, 1.0], "60": [0.0, 1.0], "30": [138.0, 965.0]}, "70": {"35": [299.0, 744.0], "70": [74.0, 96.0], "40": [585.0, 1032.0], "80": [0.0, 1.0], "50": [363.0, 549.0], "20": [101.0, 1888.0], "90": [0.0, 1.0], "60": [294.0, 397.0], "30": [220.0, 874.0]}, "40": {"35": [535.0, 1734.0], "70": [0.0, 1.0], "40": [639.0, 1531.0], "80": [0.0, 1.0], "50": [0.0, 1.0], "20": [151.0, 3388.0], "90": [0.0, 1.0], "60": [0.0, 1.0], "30": [330.0, 1733.0]}, "80": {"35": [201.0, 504.0], "70": [149.0, 187.0], "40": [358.0, 606.0], "80": [47.0, 54.0], "50": [263.0, 371.0], "20": [69.0, 1419.0], "90": [0.0, 1.0], "60": [190.0, 247.0], "30": [164.0, 637.0]}, "50": {"35": [488.0, 1367.0], "70": [0.0, 1.0], "40": [1153.0, 2345.0], "80": [0.0, 1.0], "50": [498.0, 822.0], "20": [176.0, 2982.0], "90": [0.0, 1.0], "60": [0.0, 1.0], "30": [347.0, 1471.0]}, "20": {"35": [0.0, 1.0], "70": [0.0, 1.0], "40": [0.0, 1.0], "80": [0.0, 1.0], "50": [0.0, 1.0], "20": [13.0, 1801.0], "90": [0.0, 1.0], "60": [0.0, 1.0], "30": [0.0, 1.0]}, "90": {"35": [448.0, 1028.0], "70": [375.0, 435.0], "40": [868.0, 1363.0], "80": [287.0, 313.0], "50": [662.0, 883.0], "20": [231.0, 3623.0], "90": [544.0, 586.0], "60": [494.0, 606.0], "30": [341.0, 1296.0]}, "60": {"35": [453.0, 1126.0], "70": [0.0, 1.0], "40": [921.0, 1685.0], "80": [0.0, 1.0], "50": [640.0, 971.0], "20": [131.0, 2430.0], "90": [0.0, 1.0], "60": [185.0, 267.0], "30": [267.0, 1149.0]}, "30": {"35": [0.0, 1.0], "70": [0.0, 1.0], "40": [0.0, 1.0], "80": [0.0, 1.0], "50": [0.0, 1.0], "20": [35.0, 1841.0], "90": [0.0, 1.0], "60": [0.0, 1.0], "30": [32.0, 451.0]}}
     pt_bins = [20,30,35,40,50,60,70,80,90,350]
-    ROOT.gStyle.SetPaintTextFormat(".2f")
     #{"pt_1_bin":{pt_2_bin:[num, den]}}
     den2DHist = ROOT.TH2D("den","den",len(pt_bins)-1,array('d',pt_bins),len(pt_bins)-1,array('d',pt_bins))
     for j in range(0,len(pt_bins)-1):
@@ -83,7 +82,7 @@ def draw_AbsoluteDNNEff(names, save=True):
     c.cd()
     den2DHist.Draw("TEXT2 COLZ")
     c.Update()
-    input()
+    #input()
     file = ROOT.TFile( names["inFile"], "READ" )
     effHisto2D = ROOT.TH2D(file.Get(names["histogram"][0]))
     effHisto2D.Divide(den2DHist)
@@ -179,21 +178,74 @@ BOR_eff_cb = ("{}/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTupleP
 eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate3kHz.root").format(outDir)
 eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate4kHz.root").format(outDir)
 eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate5kHz.root").format(outDir)
+plotDir = GetPlotDir(args.machine)+"/"
 
+
+
+all_files=[algoEff_cb, Eff_cb, BOR_eff_cb]#, eff_CNN_3kHz,eff_CNN_4kHz,eff_CNN_5kHz]
 x_y_titles = ["gen #tau_{1} p_{T} (GeV)", "gen #tau_{2} p_{T} (GeV)"]
 
+
+histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ]
+histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency"]
+output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency" ]
+#histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ["passed", "total"],["passed", "total"],["passed", "total"]]
+#histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency", "Algorithmic CNN Efficiency","Algorithmic CNN Efficiency","Algorithmic CNN Efficiency"]
+#output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency", "CNN3_algorithmic_efficiency","CNN3_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency" ]
+
+for i in range(0, len(all_files)):
+    names["inFile"]= all_files[i]
+    names["outFile"]= plotDir+output_files[i]
+    names["histogram"]=histogram_names[i]
+
+    names["histogramTitle"]=histogram_titles[i]
+    names["xAxis"]=x_y_titles[0]
+    names["yAxis"]=x_y_titles[1]
+    names["logX"]= True
+    names["logY"]=True
+    if(output_files[i]=="L2_algorithmic_efficiency"):
+        names["minYRange"]=0.5
+        names["maxYRange"]=0.91
+    else:
+        names["minYRange"]=0
+    beautify_plot_canvas(names)
+
+
+
+
+all_CNN_files=[ eff_CNN_3kHz,eff_CNN_4kHz,eff_CNN_5kHz]
+
+histogram_names = [["passed", "total"],["passed", "total"],["passed", "total"]]
+output_files = ["CNN3_algorithmic_efficiency","CNN4_algorithmic_efficiency", "CNN5_algorithmic_efficiency" ]
+histogram_titles = ["Algorithmic CNN Efficiency","Algorithmic CNN Efficiency","Algorithmic CNN Efficiency"]
+
+
+for i in range(0, len(all_files)):
+    names["inFile"]= all_CNN_files[i]
+    names["outFile"]= plotDir+output_files[i]
+    names["histogram"]=histogram_names[i]
+    names["histogramTitle"]=histogram_titles[i]
+    names["xAxis"]=x_y_titles[0]
+    names["yAxis"]=x_y_titles[1]
+    names["logX"]= True
+    names["logY"]=True
+    names["minYRange"]=0.8
+    beautify_plot_canvas(names)
+
+x_y_titles = ["gen #tau_{1} p_{T} (GeV)", "gen #tau_{2} p_{T} (GeV)"]
+names["minYRange"]=0.
 names["histogram"]= ["passed"]
-names["histogramTitle"]= "Absolute DNN Efficiency"
+names["histogramTitle"]= "Absolute CNN Efficiency"
 names["xAxis"]=x_y_titles[0]
 names["yAxis"]=x_y_titles[1]
 names["logX"]= True
 names["logY"]=True
 names["inFile"]= eff_CNN_3kHz
-names["outFile"]= outDir+"DNN_absolute_efficiency_fromZero_3kHz.root"
-draw_AbsoluteDNNEff(names)
+names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_3kHz"
+draw_AbsoluteCNNEff(names)
 names["inFile"]= eff_CNN_4kHz
-names["outFile"]= outDir+"DNN_absolute_efficiency_fromZero_4kHz.root"
-draw_AbsoluteDNNEff(names)
+names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_4kHz"
+draw_AbsoluteCNNEff(names)
 names["inFile"]= eff_CNN_5kHz
-names["outFile"]= outDir+"DNN_absolute_efficiency_fromZero_5kHz.root"
-draw_AbsoluteDNNEff(names)
+names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_5kHz"
+draw_AbsoluteCNNEff(names)

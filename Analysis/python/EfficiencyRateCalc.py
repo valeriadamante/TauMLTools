@@ -57,7 +57,10 @@ files_directories = {
     },
     "VBF": {
         "VBFHToTauTau_M125_TuneCUETP8M1_14TeV_powheg_pythia8":["crab_VBFHToTauTau"],
+    },
+    "Zprime": {"ZprimeToTauTau_M-4000_TuneCP5_14TeV-pythia8-tauola":["crab_ZprimeToTauTau_M-4000"],
     }
+
 }
 
 ROOT.gInterpreter.Declare(
@@ -549,7 +552,7 @@ class EffRate:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sample', required=True, type=str, help= "input reference file", choices=['Data', 'VBF'])
+parser.add_argument('--sample', required=True, type=str, help= "input reference file", choices=['Data', 'VBF', 'Zprime'])
 parser.add_argument('--range', required=False, type=int, default=0 , help='number of event to process')
 parser.add_argument('--n_max_files', required=False, type=int, default=100000, help='max number of files to be processed')
 parser.add_argument('--last_module_name', required=False, type=str, default="", help='max number of files to be processed')
@@ -596,7 +599,7 @@ if(args.last_module_name != ""):
     ER_Calc.last_module_name==args.last_module_name
 
 if(args.p == True):
-    if(args.sample == "VBF"):
+    if(args.sample == "VBF" or sample == "Zprime"):
         if(args.eff==True):
             '''
             ER_Calc.efficiency_calculator("hltL1sDoubleTauBigOR")

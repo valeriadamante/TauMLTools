@@ -3,6 +3,7 @@ import numpy as np
 import time
 import uproot
 import awkward as ak
+import json
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -134,9 +135,11 @@ def StandardizeSingleVar(CellGrid, varPos, varName, dict, min=None, max=None, me
         text = [(("mean = {}\nstd = {}\nminVar = {}\nmaxVar = {}").format(mean, std, minVar, maxVar))]
         plt.legend(text, loc="upper right")
         fig1.savefig(('{}/{}_beforeNormalizing.pdf').format(outDir, varName))
+    if(std == 0) :
+        print(("std == 0 for {}").format(varName))
     CellGrid[:,:,:,varPos]= np.clip(np.where(mask, ((CellGrid[:,:,:,varPos]-mean)/std), 0 ), min, max)
-    dict[varName]={"mean ": float(mean), "std ": float(std),  "min ": float(min),  "max ": float(max) }
-    if(kwargs['verbose']>0):
+    dict[varName]={"mean": float(mean), "std": float(std),  "min": float(min),  "max": float(max) }
+    if(kwargs['verbose']>1):
         print(dict)
     if(kwargs['plot']):
         fig2 = plt.figure()
@@ -147,6 +150,7 @@ def StandardizeSingleVar(CellGrid, varPos, varName, dict, min=None, max=None, me
             plt.yscale('log')
         bins=np.linspace(min,max,nbins)
         low_high = (min, max)
+        #print(CellGrid[:,:,:,varPos].flatten())
         plt.hist(CellGrid[:,:,:,varPos].flatten(), color='b', alpha=0.5, range=low_high, bins=bins, histtype='stepfilled', density=True)
         plt.title(('{} after normalizing').format(varName))
         plt.xlabel(varName)
@@ -160,11 +164,11 @@ def StandardizeSingleVar(CellGrid, varPos, varName, dict, min=None, max=None, me
     if(kwargs["time"]==True):
         print(("time to fill {} = {} ").format(varName, final_time))
     plt.close('all')
+    print(("end of {}").format(varName))
 
 
-
-def StandardizeVars(CellGrid, dict, verbose=0, timeInfo=True):
-    kwArgs = {'outDir': 'outDistributions',  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo, 'plot':True}
+def StandardizeVars(CellGrid, dict, distribFile, verbose=0, timeInfo=True, plot = True):
+    kwArgs = {'outDir': distribFile,  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo, 'plot':plot}
     # nVertices
     mean = int(round(CellGrid[:,:,:,np.intp(NNInputs.nVertices)].mean(),0))
     std = int(round(CellGrid[:,:,:,np.intp(NNInputs.nVertices)].std(),0))
@@ -291,6 +295,12 @@ def StandardizeVars(CellGrid, dict, verbose=0, timeInfo=True):
     sizeMask =  CellGrid[:,:,:,np.intp(NNInputs.PatatrackSize)]>0
     StandardizeSingleVar(CellGrid, NNInputs.PatatrackDz, "PatatrackDz", dict,  -5, 5, None, None, sizeMask, **kwArgs)
 
+def StandardizeVarsForDifferentDataSet(CellGrid, dict, distribFile, dictFile, verbose=0, timeInfo=True, plot = True):
+    kwArgs = {'outDir': distribFile,  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo, 'plot':plot}
+    file = open(dictFile)
+    dictToRead = json.load(file)
+    for i in dictToRead:
+        StandardizeSingleVar(CellGrid, getattr(NNInputs, i), i, dict, dictToRead[i]['min'], dictToRead[i]['max'],dictToRead[i]['mean'],dictToRead[i]['std'], **kwArgs)
 
 
 @jit(nopython=True)
@@ -399,6 +409,7 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
         #CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0, CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatavertPtv2)])
 
         CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)] = np.where(CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)]>0,  CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)]/CellGrid[tau,:,:,np.intp(NNInputs.PatatrackPtSum)], CellGrid[tau,:,:,np.intp(NNInputs.PatatrackChi2OverNdof)])
+        #print( CellGrid[tau,:,:,np.intp(NNInputs.PatatrackSizeWithVertex)])
 
     return CellGrid
 

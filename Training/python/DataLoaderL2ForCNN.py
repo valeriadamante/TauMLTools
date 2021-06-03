@@ -3,7 +3,8 @@ import tensorflow as tf
 import uproot
 import awkward as ak
 import numpy as np
-from CellGridProducer import *
+#from  CellGridProducer import *
+from  TauMLTools.Training.python.CellGridProducer import *
 import json
 from tensorflow import keras
 
@@ -24,8 +25,9 @@ def GetMCTruth(awkArray, truthVar):
     MCTruth[:] = getattr(awkArray, truthVar)
     return MCTruth
 
-def getNormCellGridMatrix(inFile, treeName, outFile, outFileNorm, dictFile, timeInfo, n_max_events, verbose):
+def getNormCellGridMatrix( n_cellsX, n_cellsY, inFile, treeName, outFile, outFileNorm, dictFileToSave, dictFileToRead, distribFile, timeInfo, n_max_events, verbose, isTrainingDataSet, plot=True):
     start_0 = time.time()
+    nVars = len(NNInputs)
     if(not os.path.exists(outFile) and not os.path.exists(outFileNorm)):
         tree = uproot.open(inFile)[treeName]
         start_1 = time.time()
@@ -47,8 +49,11 @@ def getNormCellGridMatrix(inFile, treeName, outFile, outFileNorm, dictFile, time
         if(timeInfo):
             print (("time to define grid {}").format(start_3-start_2))
         dict={}
-        StandardizeVars(CellGrid, dict, verbose, timeInfo)
-        with open(dictFile, 'w') as fp:
+        if(isTrainingDataSet):
+            StandardizeVars(CellGrid, dict, distribFile, verbose, timeInfo, plot)
+        else:
+            StandardizeVarsForDifferentDataSet(CellGrid, dict, distribFile, dictFileToRead, verbose, timeInfo, plot)
+        with open(dictFileToSave, 'w') as fp:
             json.dump(dict, fp)
         np.save(outFileNorm, CellGrid)
     elif(os.path.exists(outFile) and not os.path.exists(outFileNorm)):
@@ -59,8 +64,11 @@ def getNormCellGridMatrix(inFile, treeName, outFile, outFileNorm, dictFile, time
         if(verbose>0):
             print(("cellGrid shape = {}").format(CellGrid.shape))
         dict={}
-        StandardizeVars(CellGrid, dict, verbose, timeInfo)
-        with open(dictFile, 'w') as fp:
+        if(isTrainingDataSet):
+            StandardizeVars(CellGrid, dict, verbose, timeInfo)
+        else:
+            StandardizeVarsForDifferentDataSet(CellGrid, dict, distribFile, dictFileToRead, verbose=0, timeInfo=True, plot = True)
+        with open(dictFileToSave, 'w') as fp:
             json.dump(dict, fp)
         np.save(outFileNorm, CellGrid)
     elif(os.path.exists(outFile) and os.path.exists(outFileNorm)):
@@ -77,8 +85,8 @@ def GetTrainTestFraction(MCTruth, CellMatrix, weights, trainFraction, valFractio
     nTest = nVal+int(round(nEvents * testFraction, 0))
     if verbose>0:
         print("train fraction = ", trainFraction, "\ntest fraction = ", testFraction)
-        print("total events = ", nEvents, "\ntrain events = ", nTrain, "\ntest events = ",
-                  nTest, "\nvalidation events = ", nVal)
+        print("total events = ", nEvents, "\ntrain events = ", int(round(nEvents * trainFraction, 0)), "\ntest events = ",
+                  int(round(nEvents * testFraction, 0)), "\nvalidation events = ", int(round(nEvents * valFraction, 0)))
         print("train+test+validation events = ",  nTest)
     x_train,y_train,w_train = CellMatrix[0:nTrain, :,:,:],MCTruth[0:nTrain], weights[0:nTrain]
     x_val, y_val,w_val  = CellMatrix[nTrain:nVal,:,:,:],MCTruth[nTrain:nVal], weights[nTrain:nVal]

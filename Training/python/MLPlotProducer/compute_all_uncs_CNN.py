@@ -1,5 +1,58 @@
 import statsmodels.stats.proportion as ssp
 
+# RATES
+l1Tau_rate = 75818.34
+BigOr_rate=  75818.34*720582/4016162
+# 5 kHz
+num = 264855
+den = 720582
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("rate after dnn_score -> goal is 5 kHz"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
+print("\n")
+num = 264855
+den = 4016162
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("absolute rate after dnn_score"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
+
+# 4 kHz
+num = 211884
+den = 720582
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("rate after dnn_score -> goal is 4 kHz"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
+print("\n")
+num = 211884
+den = 4016162
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("absolute rate after dnn_score"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
+
+# 3 kHzc
+num = 158913
+den = 720582
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("rate after dnn_score -> goal is 3 kHz"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
+print("\n")
+num = 158913
+den = 4016162
+c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+print(("absolute rate after dnn_score"))
+print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
+print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
+
+
+
+
+'''
+
 # Efficiencies
 print("\n")
 num = 17129.0
@@ -61,53 +114,5 @@ print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {
 print(("rate = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
 print("\n")
 
-# with CNN there are three WP -> rate at 3, 4 and 5 kHz
 
-# 5 kHz
-
-num = 264855
-den = 720582
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("rate after dnn_score -> goal is 5 kHz"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
-print("\n")
-num = 264855
-den = 4016162
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("absolute rate after dnn_score"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
-
-# 4 kHz
-
-num = 211884
-den = 720582
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("rate after dnn_score -> goal is 4 kHz"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
-print("\n")
-num = 211884
-den = 4016162
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("absolute rate after dnn_score"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
-
-
-# 3 kHz
-
-num = 158913
-den = 720582
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("rate after dnn_score -> goal is 3 kHz"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*BigOr_rate/den,  c_up*BigOr_rate, c_low*BigOr_rate,  (c_up-num/den)*BigOr_rate,(num/den-c_low)*BigOr_rate))
-print("\n")
-num = 158913
-den = 4016162
-c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
-print(("absolute rate after dnn_score"))
-print(("efficiency = {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num/den, c_up, c_low, c_up-num/den,  num/den-c_low))
-print(("rate {} \nvar_up = {}\nvar_down = {} \nunc_up = {}\nunc_down = {}").format(num*l1Tau_rate/den,  c_up*l1Tau_rate, c_low*l1Tau_rate,  (c_up-num/den)*l1Tau_rate,(num/den-c_low)*l1Tau_rate))
+'''

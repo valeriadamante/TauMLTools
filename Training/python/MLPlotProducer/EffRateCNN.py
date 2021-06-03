@@ -197,6 +197,8 @@ if(args.effRate=='eff'):
                 hists[name].SetBinContent(ptx_index + 1, pty_index + 1, n_evt)
                 hists[name].SetBinError(ptx_index + 1, pty_index + 1, math.sqrt(n_evt))
                 if(ptx_index == pty_index):
+                    if(name == 'num'):
+                        print(("bin [{},{}], evt = {}").format(ptx_index+1, pty_index+1, n_evt))
                     print(name)
                     print(math.sqrt(n_evt))
                     hists_d[name].SetBinContent(ptx_index + 1, n_evt)
@@ -207,7 +209,8 @@ if(args.effRate=='eff'):
         hists[name].GetXaxis().SetTitle("#tau 1 P_{T_} (GeV)")
         hists[name].GetYaxis().SetTitle("#tau 2 P_{T_} (GeV)")
         hists_d[name].GetXaxis().SetTitle("#tau P_{T_} (GeV)")
-    myfile = ROOT.TFile( ("{}/Rate_{}kHz/EfficienciesCNN_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue,args.rateValue), 'RECREATE' )    
+    print( ("{}/Rate_{}kHz/EfficienciesCNN_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue))
+    myfile = ROOT.TFile( ("{}/Rate_{}kHz/EfficienciesCNN_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue), 'RECREATE' )
     hist_num.Write()
     hist_den.Write()
     hist_num_d.Write()
@@ -219,10 +222,11 @@ if(args.effRate=='eff'):
     canvas1.SetLogx()
     canvas1.SetLogy()
     EffGraph = ROOT.TEfficiency(hists['num'],hists['den'])
-    EffGraph.SetTitle("Efficiency; #tau 1 P_{T} (GeV); #tau 2 P_{T} (GeV)")
+    EffGraph.SetTitle("Algorithmic Efficiency; #tau 1 P_{T} (GeV); #tau 2 P_{T} (GeV)")
     EffGraph.Draw("TEXT2 COLZ")
     canvas1.Update()
-    canvas1.Print(('{}/Efficiency_VBF_forRate{}kHz.png').format(GetPlotDir(args.machine), args.rateValue), "png")
+    canvas1.Print(('{}/Rate_{}kHz/Efficiency_VBF_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas1.Print(('{}/Rate_{}kHz/Efficiency_VBF_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
 
     canvas2=ROOT.TCanvas()
     canvas2.cd()
@@ -235,7 +239,8 @@ if(args.effRate=='eff'):
     EffGraph_d.SetMarkerStyle(20)
     EffGraph_d.Draw()
     canvas2.Update()
-    canvas2.Print(('{}/Efficiency_VBF_Diag_forRate{}kHz.png').format(GetPlotDir(args.machine), args.rateValue), "png")
+    canvas2.Print(('{}/Rate_{}kHz/Efficiency_VBF_Diag_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas2.Print(('{}/Rate_{}kHz/Efficiency_VBF_Diag_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
 
     canvas3=ROOT.TCanvas()
     canvas3.cd()
@@ -248,7 +253,8 @@ if(args.effRate=='eff'):
     EffGraph_d_sqrt.SetMarkerStyle(20)
     EffGraph_d_sqrt.Draw()
     canvas3.Update()
-    canvas3.Print(('{}/Efficiency_VBF_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine), args.rateValue), "png")
+    canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
 
 
     #save histograms

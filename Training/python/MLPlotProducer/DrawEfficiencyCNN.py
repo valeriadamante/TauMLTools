@@ -79,20 +79,20 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
         den_cb = histDen_cb.GetBinContent(i)
         num_cnn3 = histNum_cnn3.GetBinContent(i)
         den_cnn3 = histDen_cnn3.GetBinContent(i)
-        print(("num cnn3 = {}, den cnn3 = {}").format(num_cnn3, den_cnn3))
+        #print(("num cnn3 = {}, den cnn3 = {}").format(num_cnn3, den_cnn3))
         num_cnn4 = histNum_cnn4.GetBinContent(i)
         den_cnn4 = histDen_cnn4.GetBinContent(i)
-        print(("num cnn4 = {}, den cnn4 = {}").format(num_cnn4, den_cnn4))
+        #print(("num cnn4 = {}, den cnn4 = {}").format(num_cnn4, den_cnn4))
         num_cnn5 = histNum_cnn5.GetBinContent(i)
         den_cnn5 = histDen_cnn5.GetBinContent(i)
-        print(("num cnn5 = {}, den cnn5 = {}").format(num_cnn5, den_cnn5))
+        #print(("num cnn5 = {}, den cnn5 = {}").format(num_cnn5, den_cnn5))
         eff_cb = math.sqrt(num_cb/den_cb)
         eff_cnn3 = math.sqrt(num_cnn3/den_cnn3)
         eff_cnn4 = math.sqrt(num_cnn4/den_cnn4)
         eff_cnn5 = math.sqrt(num_cnn5/den_cnn5)
         x_p = pt_bins[i] - ((pt_bins[i]-pt_bins[k])/2)
-        print(x_p)
-        print(k)
+        #print(x_p)
+        #print(k)
         gr_cb.SetPointX(k,x_p)
         gr_cnn3.SetPointX(k,x_p)
         gr_cnn4.SetPointX(k,x_p)
@@ -101,8 +101,8 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
         gr_cnn3.SetPointY(k,eff_cnn3)
         gr_cnn4.SetPointY(k,eff_cnn4)
         gr_cnn5.SetPointY(k,eff_cnn5)
-        print(x_p)
-        print(eff_cb)
+        #print(x_p)
+        #print(eff_cb)
         err_x_low = (pt_bins[i]-pt_bins[k])/2
         err_x_up= (pt_bins[i]-pt_bins[k])/2
         c_low_cb, c_up_cb = ssp.proportion_confint(num_cb, den_cb, alpha=1-0.68, method='beta')
@@ -146,6 +146,7 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
     gr_cnn5.SetMarkerStyle( 20 )
     gr_cnn5.SetTitle(("{};{};{}").format(names["histTitle"],names["xAxisTitle"],names["yAxisTitle"]))
     legend.AddEntry(gr_cnn5, "CNN rate 5kHz", "lep")
+    gr_cnn3.GetYaxis().SetRangeUser(0.6,1.01)
     gr_cnn3.Draw("AP")
     gr_cnn4.Draw("PSAME")
     gr_cnn5.Draw("PSAME")
@@ -154,7 +155,7 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
     canvas.Update()
     canvas.Print(("{}.png").format(names["outFile"]),"png")
     canvas.Print(("{}.pdf").format(names["outFile"]),"pdf")
-    input()
+    #input()
 
 
 def beautify_plot_canvas_1hist(histNum, histDen, names, save=True):
@@ -202,9 +203,10 @@ def beautify_plot_canvas_1hist(histNum, histDen, names, save=True):
 algoEff_cb =("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
 Eff_cb =("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
 BOR_eff_cb = ("{}/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTuplePath)
-eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate3kHz.root").format(outDir)
-eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate4kHz.root").format(outDir)
-eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate5kHz.root").format(outDir)
+
+eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
+eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
+eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
 
 names = {
     "outFile":" ",
@@ -217,19 +219,22 @@ names = {
 
 plotDir = GetPlotDir(args.machine)
 eventTuple_file = ROOT.TFile(algoEff_cb, "READ")
-tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
-tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
-tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
-
 histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_algo" ) )
 histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_algo" ) )
+tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
 histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
 histDen_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
+tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
 histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
 histDen_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
+tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
 histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
 histDen_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
-
+'''
+for i in range(1, histNum_cnn3.GetNbinsX()+1):
+    print(histNum_cnn3.GetBinContent(i),histNum_cnn4.GetBinContent(i),histNum_cnn5.GetBinContent(i))
+    print(histDen_cnn3.GetBinContent(i),histDen_cnn4.GetBinContent(i),histDen_cnn5.GetBinContent(i))
+'''
 names["histTitle"] = "Algorithmic Efficiency"
 names["outFile"] = plotDir+"/Algorithmic_Efficiency_diagonal"
 beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names)
