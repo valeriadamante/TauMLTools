@@ -12,7 +12,7 @@ dir_dict["local"]={}
 dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
 dir_dict["local"]["model"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/model/"
 dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
-effRate_dict ={"eff":"VBF", "rate":"data", "test":"DataSetTraining"}
+effRate_dict ={"eff":"VBF", "rate":"data", "test":"DataSetTraining","Zprime":"Zprime"}
 def GetDataSetPath(machine):
     return dir_dict[machine]["data"]
 def GetOutPath(machine):
@@ -53,6 +53,15 @@ def GetCellGridNormMatrix(machine, effRate, **kwargs):
         if(n_max_events>0):
             outFile_name =  ('CellGridVBF_{}Evts.npy').format(n_max_events)
             outFileNorm_name=('CellGridNormVBF_{}Evts.npy').format(n_max_events)
+        isTrainingDataSet = False
+    if(effRate=='Zprime'):
+        inFile_name = 'miniTuple_Zprime.root'
+        outFile_name =  'CellGridZprime.npy'
+        outFileNorm_name='CellGridZprimeNorm.npy'
+        dictName = 'NormalizationDictZprime.json'
+        if(n_max_events>0):
+            outFile_name =  ('CellGridZprime_{}Evts.npy').format(n_max_events)
+            outFileNorm_name=('CellGridNormZprime_{}Evts.npy').format(n_max_events)
         isTrainingDataSet = False
     elif(effRate=='rate'):
         inFile_name = 'miniTuple_Data.root'
@@ -140,6 +149,8 @@ def GetRootPath(machine, effRate):
         inFile_name = 'miniTuple_VBF.root'
     elif(effRate=='rate'):
         inFile_name = 'miniTuple_Data.root'
+    elif(effRate=='Zprime'):
+        inFile_name = 'miniTuple_Zprime.root'
     inFile = absolute_path+inFile_name
     return inFile
 

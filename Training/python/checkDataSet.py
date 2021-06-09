@@ -4,7 +4,7 @@ import root_pandas
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
-parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate'])
+parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate', 'Zprime'])
 parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
 parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
 parser.add_argument('--Weights_file', required=False, type=str, default='weights.npy', help='output file name')

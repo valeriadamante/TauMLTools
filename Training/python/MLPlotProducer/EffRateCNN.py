@@ -10,7 +10,7 @@ ROOT.gStyle.SetPaintTextFormat(".2f")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
-parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate'])
+parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate', 'Zprime'])
 parser.add_argument('--rateValue', required= False, type=int, default = 4, choices=[3,4,5])
 parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
 parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
@@ -197,7 +197,7 @@ if(args.effRate=='eff'):
                 hists[name].SetBinContent(ptx_index + 1, pty_index + 1, n_evt)
                 hists[name].SetBinError(ptx_index + 1, pty_index + 1, math.sqrt(n_evt))
                 if(ptx_index == pty_index):
-                    if(name == 'num'):
+                    if(name == 'den'):
                         print(("bin [{},{}], evt = {}").format(ptx_index+1, pty_index+1, n_evt))
                     print(name)
                     print(math.sqrt(n_evt))
@@ -255,6 +255,140 @@ if(args.effRate=='eff'):
     canvas3.Update()
     canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
     canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+
+
+    #save histograms
+
+    EffGraph.Write()
+    EffGraph_d.Write()
+    EffGraph_d_sqrt.Write()
+    myfile.Close()
+
+
+
+if(args.effRate=='Zprime'):
+    dataframeDenName = ("{}/df_for_den_Zprime.root").format(absolute_path)
+    dataframeNumName = ('{}/df_for_num_Zprime_forRate{}kHz.root').format(absolute_path, args.rateValue)
+    if(not os.path.exists(dataframeDenName)):
+        save_dataframe(df, dataframeDenName, treeName, args.rateValue, False)
+    df_for_den = root_pandas.read_root(dataframeDenName, treeName)
+
+    if(not os.path.exists(dataframeNumName) ):
+        save_dataframe(df, dataframeNumName, treeName, args.rateValue, True)
+    df_for_num = root_pandas.read_root(dataframeNumName, treeName)
+
+    df_for_num_2 = df_for_num[df_for_num.hasTwoHadTaus==2]
+    df_for_den_2 = df_for_den[df_for_den.hasTwoHadTaus==2]
+    df_for_den_count = df_for_den_2.groupby('evt').count()
+    df_for_num_count = df_for_num_2.groupby('evt').count()
+
+    den = df_for_den_count[(df_for_den_count.genLepton_vis_pt==2)].shape[0]
+    num = df_for_num_count[(df_for_num_count.genLepton_vis_pt==2)].shape[0]
+    print(num)
+    print(den)
+
+    eff = num/den
+    c_low, c_up = ssp.proportion_confint(num, den, alpha=1-0.68, method='beta')
+    print(("total numerator = \t {} \ntotal denominator = \t {} \nefficiency = \t {} \nvar_up = \t {} \nvar_down = \t {} \nunc_up = \t {} \nunc_down = \t {}").format(num, den, eff, c_up, c_low, c_up-eff, eff-c_low))
+    #print(("total Rate = \t {} \nvar_up = \t {} \nvar_down = \t {} \nunc_up \t {} \nunc_down \t {}").format(eff_rate,  c_up_rate, c_low_rate, c_up_rate-eff_rate, eff_rate-c_low_rate))
+
+    print(df_for_num_2.shape[0])
+
+    df_dict = {'num': df_for_num_2, 'den': df_for_den_2}
+
+    hist_num_d = ROOT.TH1D("passed_d" ,"passed_d" ,len(pt_bins)-1,array('d',pt_bins))
+    hist_den_d = ROOT.TH1D("total_d" ,"total_d" ,len(pt_bins)-1,array('d',pt_bins))
+    hist_num_d_sqrt = ROOT.TH1D("passed_d_sqrt" ,"passed_d_sqrt" ,len(pt_bins)-1,array('d',pt_bins))
+    hist_den_d_sqrt = ROOT.TH1D("total_d_sqrt" ,"total_d_sqrt" ,len(pt_bins)-1,array('d',pt_bins))
+    hist_num = ROOT.TH2D("passed" , "passed" , len(pt_bins)-1, array('d',pt_bins), len(pt_bins)-1,array('d',pt_bins) )
+    hist_den = ROOT.TH2D("total" , "total" , len(pt_bins)-1, array('d',pt_bins), len(pt_bins)-1,array('d',pt_bins) )
+    hists = { 'num': hist_num, 'den': hist_den  }
+    hists_d = { 'num': hist_num_d, 'den': hist_den_d  }
+    hists_d_sqrt = { 'num': hist_num_d_sqrt, 'den': hist_den_d_sqrt  }
+
+    for name in ['num', 'den']:
+        for ptx_index in range(0, len(pt_bins)-1):
+            for pty_index in range(0, len(pt_bins)-1):
+                if(pty_index > ptx_index):
+                    continue
+                x_min, x_max = pt_bins[ptx_index], pt_bins[ptx_index+1]
+                y_min, y_max = pt_bins[pty_index], pt_bins[pty_index+1]
+                def inside_bin(values, index):
+                    x_idx = -1
+                    y_idx = -1
+                    for n in range(len(values)):
+                        pass_x = values[n]>= x_min and values[n]<x_max
+                        pass_y = values[n]>= y_min and values[n]<y_max
+                        if(pass_x and (x_idx<0 or x_idx==y_idx)):
+                            x_idx= n
+                        if(pass_y and (y_idx<0 or y_idx==x_idx)):
+                            y_idx= n
+                    flag = 1 if x_idx>=0 and y_idx >=0  and x_idx != y_idx else 0
+                    return flag
+                #print(sum(df_dict[name].groupby('evt')['genLepton_vis_pt'].agg(inside_bin, engine="numba")))
+                labels = df_dict[name].groupby('evt')['genLepton_vis_pt'].agg(inside_bin, engine="numba")
+                n_evt = np.sum(labels)
+                hists[name].SetBinContent(ptx_index + 1, pty_index + 1, n_evt)
+                hists[name].SetBinError(ptx_index + 1, pty_index + 1, math.sqrt(n_evt))
+                if(ptx_index == pty_index):
+                    if(name == 'num'):
+                        print(("bin [{},{}], evt = {}").format(ptx_index+1, pty_index+1, n_evt))
+                    print(name)
+                    print(math.sqrt(n_evt))
+                    hists_d[name].SetBinContent(ptx_index + 1, n_evt)
+                    hists_d_sqrt[name].SetBinContent(ptx_index + 1, math.sqrt(n_evt))
+                    #hists_d[name].SetBinError(ptx_index + 1, math.sqrt(math.sqrt(n_evt)))
+                #print(n_evt)
+    for name in ['num','den']:
+        hists[name].GetXaxis().SetTitle("#tau 1 P_{T_} (GeV)")
+        hists[name].GetYaxis().SetTitle("#tau 2 P_{T_} (GeV)")
+        hists_d[name].GetXaxis().SetTitle("#tau P_{T_} (GeV)")
+    print( ("{}/Rate_{}kHz/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue))
+    myfile = ROOT.TFile( ("{}/Rate_{}kHz/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue), 'RECREATE' )
+    hist_num.Write()
+    hist_den.Write()
+    hist_num_d.Write()
+    hist_den_d.Write()
+    hist_num_d_sqrt.Write()
+    hist_den_d_sqrt.Write()
+    canvas1=ROOT.TCanvas()
+    canvas1.cd()
+    canvas1.SetLogx()
+    canvas1.SetLogy()
+    EffGraph = ROOT.TEfficiency(hists['num'],hists['den'])
+    EffGraph.SetTitle("Algorithmic Efficiency; #tau 1 P_{T} (GeV); #tau 2 P_{T} (GeV)")
+    EffGraph.Draw("TEXT2 COLZ")
+    canvas1.Update()
+    canvas1.Print(('{}/Rate_{}kHz/Efficiency_Zprime_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas1.Print(('{}/Rate_{}kHz/Efficiency_Zprime_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+
+    canvas2=ROOT.TCanvas()
+    canvas2.cd()
+    canvas2.SetLogx()
+    EffGraph_d = ROOT.TEfficiency(hists_d['num'],hists_d['den'])
+    EffGraph_d.SetMarkerColor( 4 )
+    EffGraph_d.SetMarkerStyle( 21 )
+    EffGraph_d.SetTitle("Efficiency;#tau P_{T_} (GeV);#epsilon")
+    EffGraph_d.SetMarkerColor(4)
+    EffGraph_d.SetMarkerStyle(20)
+    EffGraph_d.Draw()
+    canvas2.Update()
+    canvas2.Print(('{}/Rate_{}kHz/Efficiency_Zprime_Diag_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas2.Print(('{}/Rate_{}kHz/Efficiency_Zprime_Diag_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+
+    canvas3=ROOT.TCanvas()
+    canvas3.cd()
+    canvas3.SetLogx()
+    EffGraph_d_sqrt = ROOT.TEfficiency(hists_d_sqrt['num'],hists_d_sqrt['den'])
+    EffGraph_d_sqrt.SetMarkerColor( 4 )
+    EffGraph_d_sqrt.SetMarkerStyle( 21 )
+    EffGraph_d_sqrt.SetTitle("Efficiency;#tau P_{T_} (GeV);#epsilon")
+    EffGraph_d_sqrt.SetMarkerColor(4)
+    EffGraph_d_sqrt.SetMarkerStyle(20)
+    EffGraph_d_sqrt.Draw()
+    canvas3.Update()
+    canvas3.Print(('{}/Rate_{}kHz/Efficiency_Zprime_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
+    canvas3.Print(('{}/Rate_{}kHz/Efficiency_Zprime_sqrt_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
 
 
     #save histograms

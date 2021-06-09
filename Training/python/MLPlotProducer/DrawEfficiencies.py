@@ -162,7 +162,7 @@ histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_normal" ) )
 
 histNum_dnn = ROOT.TH1D(tauTuple_file.Get( "passed_d" ) )
 histDen_dnn = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
-names["histTitle"] = "Absolute L2 Efficiency"
+names["histTitle"] = "Absolute Efficiency"
 names["outFile"] = outFile_dir+"/L2_Efficiency_diagonal"
 beautify_plot_canvas(histNum_cb, histDen_cb, histNum_dnn, histDen_dnn, names)
 

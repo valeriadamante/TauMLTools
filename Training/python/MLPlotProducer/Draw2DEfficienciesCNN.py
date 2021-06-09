@@ -115,7 +115,7 @@ def draw_AbsoluteCNNEff(names, save=True):
     effHisto2D.GetZaxis().SetRangeUser(names["minYRange"], names["maxYRange"]) #("gen #tau_{2} p_{T} (GeV)")
     effHisto2D.Draw("TEXT2 COLZ")
     canvas.Update()
-    canvas.Print(("{}.png").format(names["outFile"]),"png")
+    #canvas.Print(("{}.png").format(names["outFile"]),"png")
     canvas.Print(("{}.pdf").format(names["outFile"]),"pdf")
     #input()
 names = {
@@ -216,13 +216,16 @@ for i in range(0, len(all_files)):
 all_CNN_files=[ eff_CNN_3kHz,eff_CNN_4kHz,eff_CNN_5kHz]
 
 histogram_names = [["passed", "total"],["passed", "total"],["passed", "total"]]
+rates = [3,4,5]
 output_files = ["CNN3_algorithmic_efficiency","CNN4_algorithmic_efficiency", "CNN5_algorithmic_efficiency" ]
 histogram_titles = ["Algorithmic CNN Efficiency","Algorithmic CNN Efficiency","Algorithmic CNN Efficiency"]
 
 
 for i in range(0, len(all_files)):
     names["inFile"]= all_CNN_files[i]
-    names["outFile"]= plotDir+output_files[i]
+    names["outFile"] = ('{}/Rate_{}kHz/{}').format(plotDir, rates[i], output_files[i])
+
+    #names["outFile"]= plotDir+output_files[i]
     names["histogram"]=histogram_names[i]
     names["histogramTitle"]=histogram_titles[i]
     names["xAxis"]=x_y_titles[0]
@@ -241,11 +244,11 @@ names["yAxis"]=x_y_titles[1]
 names["logX"]= True
 names["logY"]=True
 names["inFile"]= eff_CNN_3kHz
-names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_3kHz"
+names["outFile"] = ('{}/Rate_3kHz/CNN_absolute_efficiency_3kHz').format(plotDir)
 draw_AbsoluteCNNEff(names)
 names["inFile"]= eff_CNN_4kHz
-names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_4kHz"
+names["outFile"] = ('{}/Rate_4kHz/CNN_absolute_efficiency_4kHz').format(plotDir)
 draw_AbsoluteCNNEff(names)
 names["inFile"]= eff_CNN_5kHz
-names["outFile"]= plotDir+"CNN_absolute_efficiency_fromZero_5kHz"
+names["outFile"] = ('{}/Rate_5kHz/CNN_absolute_efficiency_5kHz').format(plotDir)
 draw_AbsoluteCNNEff(names)

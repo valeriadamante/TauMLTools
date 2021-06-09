@@ -210,11 +210,12 @@ class EffRate:
     pt_threshold = 15.0
     n_events_1l1tau =0
 
-    def __init__(self, input_files, tree, range, verbose):
+    def __init__(self, input_files, tree, range, verbose,sample):
         self.input_files = input_files
         self.tree = tree
         self.range = range
         self.verbose = verbose
+        self.sample = sample
 
     def average_l1tau_calculator(self, last_module_name):
         self.average_taus= []
@@ -313,7 +314,7 @@ class EffRate:
           df = df.Define("n_tauHad", "FindTwoHadTaus(genLepton_kind,genLepton_vis_pt,genLepton_vis_eta, {})".format(self.pt_threshold))
           df = df.Filter("n_tauHad.size() == 2")
           print("DOPO due tau had ci sono ... ", df.Count().GetValue())
-          print("saving denominator with two had taus ")
+
 
 
 
@@ -321,7 +322,7 @@ class EffRate:
           df = df.Define("reordered_vis_phi", "ReorderHadTaus(genLepton_vis_pt,genLepton_vis_phi, n_tauHad)")
           df = df.Define("reordered_vis_eta", "ReorderHadTaus(genLepton_vis_pt,genLepton_vis_eta, n_tauHad)")
 
-          df_den = df
+
 
           df = df.Define("n_l1Taus", "FindL1Taus(l1Tau_pt,l1Tau_hwIso)")
           df = df.Filter("n_l1Taus.size()>=1 ")
@@ -333,7 +334,8 @@ class EffRate:
 
           df = df.Filter("vis_pt_with_corr.size()==2 ")
           print("DOPO due corrispondenze presenti ci sono ... ", df.Count().GetValue())
-
+          print("saving denominator with two had taus and correspondence ")
+          df_den = df
           df = df.Filter(("defaultDiTauPath_lastModuleIndex >={}").format(last_module_index[last_module_name]+1))
           print("dopo last module index ci sono... ", df.Count().GetValue())
           print("saving numerator with 2 had taus with match and last module index ")
@@ -358,9 +360,11 @@ class EffRate:
                    if(pt1_index>=pt2_index):
                        print(("filling bin .. [ {}, {} ]").format(pt1_index, pt2_index))
                        # quello piu energetico
-                       df_denominator_ptbin = df_den.Filter("reordered_vis_pt[0] > {} && reordered_vis_pt[0] <= {} ".format(self.Pt1Bins[pt1_index], self.Pt1Bins[pt1_index+1]))
+                       df_denominator_ptbin = df_den.Filter("vis_pt_with_corr[0] > {} && vis_pt_with_corr[0] <= {} ".format(self.Pt1Bins[pt1_index], self.Pt1Bins[pt1_index+1]))
+                       #df_denominator_ptbin = df_den.Filter("reordered_vis_pt[0] > {} && reordered_vis_pt[0] <= {} ".format(self.Pt1Bins[pt1_index], self.Pt1Bins[pt1_index+1]))
                        df_numerator_ptbin = df_num.Filter("vis_pt_with_corr[0] > {} && vis_pt_with_corr[0] <= {} ".format(self.Pt1Bins[pt1_index], self.Pt1Bins[pt1_index+1]))
-                       df_denominator_ptbin = df_denominator_ptbin.Filter("reordered_vis_pt[1] > {} && reordered_vis_pt[1] <= {} ".format(self.Pt2Bins[pt2_index], self.Pt2Bins[pt2_index+1]))
+                       #df_denominator_ptbin = df_denominator_ptbin.Filter("reordered_vis_pt[1] > {} && reordered_vis_pt[1] <= {} ".format(self.Pt2Bins[pt2_index], self.Pt2Bins[pt2_index+1]))
+                       df_denominator_ptbin = df_denominator_ptbin.Filter("vis_pt_with_corr[1] > {} && vis_pt_with_corr[1] <= {} ".format(self.Pt2Bins[pt2_index], self.Pt2Bins[pt2_index+1]))
                        df_numerator_ptbin = df_numerator_ptbin.Filter("vis_pt_with_corr[1] > {} && vis_pt_with_corr[1] <= {} ".format(self.Pt2Bins[pt2_index], self.Pt2Bins[pt2_index+1]))
                        numerator = float(df_numerator_ptbin.Count().GetValue())
                        #print numerator
@@ -482,7 +486,7 @@ class EffRate:
     def save_numbers(self, last_module_name, type):
         import json
         # save to npy file
-        full_name = "efficiency_NumAndDen_"+type+"_"+last_module_name+".json"
+        full_name = ("{}_Corr/efficiency_NumAndDen_{}_{}_{}.json").format(self.sample,type, last_module_name, self.sample)
         dict = {}
         for pt1_index in range(0, len(self.Pt1Bins)-1):
             dict[self.Pt1Bins[pt1_index]]={}
@@ -496,11 +500,11 @@ class EffRate:
 
     def fill_histogram(self, type, last_module_name,add1Dplot=False):
         ROOT.gStyle.SetPaintTextFormat(".2f")
-        if(self.verbose>0):
-            print("opening canvas, histogram")
+        #if(self.verbose>0):
+        #    print("opening canvas, histogram")
         #uniformTau = ROOT.TGraph(len(self.Pt1Bins)-1,array('d',self.Pt1Bins),array('d',efficiencies))
-        canvas=ROOT.TCanvas()
-        canvas.cd()
+        #canvas=ROOT.TCanvas()
+        #canvas.cd()
         uniformTau = ROOT.TH2D("efficiency_"+type,"efficiency_"+type,len(self.Pt1Bins)-1,array('d',self.Pt1Bins),len(self.Pt2Bins)-1,array('d',self.Pt2Bins))
         hPassed = ROOT.TH1D("passed_"+type,"passed_"+type,len(self.Pt1Bins)-1,array('d',self.Pt1Bins))
         hTotal = ROOT.TH1D("total_"+type,"total_"+type,len(self.Pt1Bins)-1,array('d',self.Pt1Bins))
@@ -515,25 +519,25 @@ class EffRate:
                  uniformTau.SetBinContent((pt1_index+1),(pt2_index+1), efficiency)
                  if(pt1_index==pt2_index and add1Dplot):
                      x.append(self.Pt1Bins[pt1_index])
-                     y.append(np.sqrt(efficiency))
+                     y.append(efficiency)
                      if(self.verbose>0):
-                         print "x = ", x[pt1_index], "\t num = ", np.sqrt(self.all_numerators[pt1_index][pt2_index]), "\t den = ",  np.sqrt(self.all_denominators[pt1_index][pt2_index])
+                         print "x = ", x[pt1_index], "\t num = ",self.all_numerators[pt1_index][pt2_index], "\t den = ", self.all_denominators[pt1_index][pt2_index]
                          print "bin X [", self.Pt1Bins[pt1_index], self.Pt1Bins[pt1_index+1], "] bin Y [", self.Pt2Bins[pt2_index], self.Pt2Bins[pt2_index+1], "] num= " , self.all_numerators[pt1_index][pt2_index], " den = ", self.all_denominators[pt1_index][pt2_index]
-                     hPassed.SetBinContent((pt1_index+1), np.sqrt(self.all_numerators[pt1_index][pt2_index]))
-                     hTotal.SetBinContent((pt1_index+1), np.sqrt(self.all_denominators[pt1_index][pt2_index]))
+                     hPassed.SetBinContent((pt1_index+1), self.all_numerators[pt1_index][pt2_index])
+                     hTotal.SetBinContent((pt1_index+1), self.all_denominators[pt1_index][pt2_index])
         n = len(x)
         uniformTau.Draw("TEXT2 COLZ")
-        canvas.SetLogx()
-        canvas.SetLogy()
-        canvas.Update()
-        full_name = "efficiency_"+type+"_"+last_module_name
-        canvas.Print(full_name+".png", "png")
+        #canvas.SetLogx()
+        #canvas.SetLogy()
+        #canvas.Update()
+        rootFileName= ("{}_Corr/efficiency_{}_{}_{}.root").format(self.sample, type, last_module_name, self.sample)
+        ##canvas.Print(full_name+".png", "png")
         #save histograms
-        myfile = ROOT.TFile( full_name+".root", 'RECREATE' )
+        myfile = ROOT.TFile( rootFileName, 'RECREATE' )
         uniformTau.Write()
         if(add1Dplot):
-            canvas3=ROOT.TCanvas()
-            canvas3.cd()
+            #canvas3=ROOT.TCanvas()
+            #canvas3.cd()
             EffGraph = ROOT.TEfficiency(hPassed,hTotal)
             hPassed.Write()
             hTotal.Write()
@@ -544,9 +548,9 @@ class EffRate:
             EffGraph.SetMarkerColor(4)
             EffGraph.SetMarkerStyle(20)
             EffGraph.Draw("AP")
-            #canvas3.SetLogx()
-            canvas3.Update()
-            canvas3.Print(full_name+"_Histo1D.png", "png")
+            ##canvas3.SetLogx()
+            #canvas3.Update()
+            #canvas3.Print(full_name+"_Histo1D.png", "png")
         myfile.Close()
         #raw_input()
 
@@ -594,12 +598,13 @@ def search_files(inputs):
 inputs = []
 search_files(inputs)
 
-ER_Calc= EffRate(inputs, "taus", args.range, args.verbose)
+ER_Calc= EffRate(inputs, "taus", args.range, args.verbose, args.sample)
 if(args.last_module_name != ""):
     ER_Calc.last_module_name==args.last_module_name
-
+if not os.path.exists(("{}_Corr").format(args.sample)):
+    os.mkdir(("{}_Corr").format(self.sample))
 if(args.p == True):
-    if(args.sample == "VBF" or sample == "Zprime"):
+    if(args.sample == "VBF" or args.sample == "Zprime"):
         if(args.eff==True):
             '''
             ER_Calc.efficiency_calculator("hltL1sDoubleTauBigOR")
@@ -607,6 +612,9 @@ if(args.p == True):
             print "total numerator = ", ER_Calc.numerator
             print "total denominator = ", ER_Calc.denominator
             print "total efficiency = ", float(ER_Calc.numerator)/float(ER_Calc.denominator)
+
+            ER_Calc.numerator = 0.
+            ER_Calc.denominator = 0.
             '''
             ER_Calc.efficiency_calculator("hltDoubleL2IsoTau26eta2p2")
             print "\nafter hltDoubleL2IsoTau26eta2p2"

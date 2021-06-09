@@ -54,8 +54,12 @@ params = {
     'opt_threshold_5': 0.051069704813926364,
 
 }
-evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/outputs_EvtTuples/correct_efficiencies"
+evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/outputs_EvtTuples/correct_efficiencies/"
+
 outDir= GetOutPath(args.machine)
+Eff_algo_cb = ("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
+Eff_cb = ("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
+BOR_eff_cb = ("{}/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTuplePath)
 ROOT.gStyle.SetPaintTextFormat(".2f")
 def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names):
     H_ref = 1000;
@@ -90,6 +94,10 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
         eff_cnn3 = math.sqrt(num_cnn3/den_cnn3)
         eff_cnn4 = math.sqrt(num_cnn4/den_cnn4)
         eff_cnn5 = math.sqrt(num_cnn5/den_cnn5)
+        print(eff_cb)
+        #print(eff_cnn3)
+        #print(eff_cnn4)
+        #print(eff_cnn5)
         x_p = pt_bins[i] - ((pt_bins[i]-pt_bins[k])/2)
         #print(x_p)
         #print(k)
@@ -101,6 +109,7 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
         gr_cnn3.SetPointY(k,eff_cnn3)
         gr_cnn4.SetPointY(k,eff_cnn4)
         gr_cnn5.SetPointY(k,eff_cnn5)
+        #print(k,gr_cnn3.GetPointY(k))
         #print(x_p)
         #print(eff_cb)
         err_x_low = (pt_bins[i]-pt_bins[k])/2
@@ -131,6 +140,7 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
     gr_cb.SetTitle(("{};{};{}").format(names["histTitle"],names["xAxisTitle"],names["yAxisTitle"]))
     legend.AddEntry(gr_cb, "cut based", "lep")
     #legend.SetBorderSize(2)
+    print(gr_cnn3.GetPointY(3))
     gr_cnn3.SetMarkerColor( ROOT.kGreen )
     gr_cnn3.SetLineColor( ROOT.kGreen )
     gr_cnn3.SetMarkerStyle( 20 )
@@ -146,6 +156,7 @@ def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, his
     gr_cnn5.SetMarkerStyle( 20 )
     gr_cnn5.SetTitle(("{};{};{}").format(names["histTitle"],names["xAxisTitle"],names["yAxisTitle"]))
     legend.AddEntry(gr_cnn5, "CNN rate 5kHz", "lep")
+    #gr_cnn3.GetXaxis().SetRangeUser(20,400)
     gr_cnn3.GetYaxis().SetRangeUser(0.6,1.01)
     gr_cnn3.Draw("AP")
     gr_cnn4.Draw("PSAME")
@@ -199,15 +210,6 @@ def beautify_plot_canvas_1hist(histNum, histDen, names, save=True):
         canvas.Print(("{}.png").format(names["outFile"]),"png")
         canvas.Print(("{}.pdf").format(names["outFile"]),"pdf")
 
-
-algoEff_cb =("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
-Eff_cb =("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
-BOR_eff_cb = ("{}/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTuplePath)
-
-eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
-eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
-eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
-
 names = {
     "outFile":" ",
     "histTitle":"Efficiency",
@@ -218,62 +220,197 @@ names = {
 # *** Draw superimposed algo efficiencies *****
 
 plotDir = GetPlotDir(args.machine)
-eventTuple_file = ROOT.TFile(algoEff_cb, "READ")
-histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_algo" ) )
-histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_algo" ) )
+
+eventTuple_algo_file = ROOT.TFile(Eff_algo_cb, "READ")
+#eventTuple_file = ROOT.TFile(("VBF_special/efficiency_algo_VBF_hltDoubleL2IsoTau26eta2p2.root"), "READ")
+histNum_algo_cb = ROOT.TH1D(eventTuple_algo_file.Get( "passed_algo" ) )
+histDen_algo_cb = ROOT.TH1D(eventTuple_algo_file.Get( "total_algo" ) )
+
+eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
 tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
-histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
-histDen_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
+histNum_algo_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
+histDen_algo_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
+
+eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
 tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
-histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
-histDen_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
+histNum_algo_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
+histDen_algo_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
+
+eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
 tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
-histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
-histDen_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
-'''
-for i in range(1, histNum_cnn3.GetNbinsX()+1):
-    print(histNum_cnn3.GetBinContent(i),histNum_cnn4.GetBinContent(i),histNum_cnn5.GetBinContent(i))
-    print(histDen_cnn3.GetBinContent(i),histDen_cnn4.GetBinContent(i),histDen_cnn5.GetBinContent(i))
-'''
+histNum_algo_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
+histDen_algo_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
+
+#for i in range(1, histNum_cnn3.GetNbinsX()+1):
+    #print(histNum_cnn3.GetBinContent(i),histNum_cnn4.GetBinContent(i),histNum_cnn5.GetBinContent(i))
+    #print(histDen_cnn3.GetBinContent(i),histDen_cnn4.GetBinContent(i),histDen_cnn5.GetBinContent(i))
+
 names["histTitle"] = "Algorithmic Efficiency"
+names["yAxisTitle"] = "algo efficiency"
 names["outFile"] = plotDir+"/Algorithmic_Efficiency_diagonal"
-beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names)
+beautify_plot_canvas(histNum_algo_cb, histDen_algo_cb, histNum_algo_cnn3, histDen_algo_cnn3, histNum_algo_cnn4,histDen_algo_cnn4,histNum_algo_cnn5, histDen_algo_cnn5, names)
 
 #  eff cutbased - eff DNN
 eventTuple_file = ROOT.TFile(Eff_cb, "READ")
+#eventTuple_file = ROOT.TFile(("VBF_special/efficiency_algo_VBF_hltDoubleL2IsoTau26eta2p2.root"), "READ")
+histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_normal" ) )
+histDen_forAll = ROOT.TH1D(eventTuple_file.Get( "total_normal" ) )
+names["histTitle"] = "Absolute L2 Efficiency"
+names["outFile"] = plotDir+"/L2eff_abs_diag_cb"
+beautify_plot_canvas_1hist(histNum_cb, histDen_forAll, names)
+
+eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
+histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
+names["histTitle"] = "Absolute L2 Efficiency for CNN threshold at 3 khZ"
+names["outFile"] = ('{}/Rate_3kHz/L2_Efficiency_diagonal_3kHz').format(plotDir)
+beautify_plot_canvas_1hist(histNum_cnn3, histDen_forAll, names)
+
+
+
+eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
+histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
+names["histTitle"] = "Absolute L2 Efficiency for CNN threshold at 4 khZ"
+names["outFile"] = ('{}/Rate_4kHz/L2_Efficiency_diagonal_4kHz').format(plotDir)
+
+beautify_plot_canvas_1hist(histNum_cnn4, histDen_forAll, names)
+
+
+eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
+histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
+names["histTitle"] = "Absolute L2 Efficiency for CNN threshold at 5 khZ"
+names["outFile"] = ('{}/Rate_5kHz/L2_Efficiency_diagonal_5kHz').format(plotDir)
+
+beautify_plot_canvas_1hist(histNum_cnn5, histDen_forAll, names)
+
+
+#for i in range(1, histNum_cnn3.GetNbinsX()+1):
+    #print(histDen_forAll.GetBinContent(i))
+    #print(("cb efficiency for {} and {} = {}").format(histNum_cb.GetBinContent(i) , histDen_cb.GetBinContent(i) , math.sqrt(histNum_cb.GetBinContent(i)/histDen_cb.GetBinContent(i))))
+    #print(("cnn3 efficiency for {} and {} = {}").format(histNum_cnn3.GetBinContent(i) , histDen_cnn3.GetBinContent(i) , math.sqrt(histNum_cnn3.GetBinContent(i)/histDen_cnn3.GetBinContent(i))))
+    #print(("cnn4 efficiency for {} and {} = {}").format(histNum_cnn4.GetBinContent(i) , histDen_cnn4.GetBinContent(i) , math.sqrt(histNum_cnn4.GetBinContent(i)/histDen_cnn4.GetBinContent(i))))
+    #print(("cnn5 efficiency for {} and {} = {}").format(histNum_cnn5.GetBinContent(i) , histDen_cnn5.GetBinContent(i) , math.sqrt(histNum_cnn5.GetBinContent(i)/histDen_cnn5.GetBinContent(i))))
+names["histTitle"] = "Absolute Efficiency"
+names["yAxisTitle"] = "efficiency"
+names["outFile"] = plotDir+"/Absolute_Efficiency_diagonal"
+#beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names)
+beautify_plot_canvas(histNum_cb, histDen_forAll, histNum_cnn3, histDen_forAll, histNum_cnn4,histDen_forAll,histNum_cnn5, histDen_forAll, names)
+
+
+# BOR eff cutbased - BOR  eff  dnn (it should be the same) - 2 different plots
+eventTuple_BOR_file = ROOT.TFile(BOR_eff_cb, "READ")
+#eventTuple_file = ROOT.TFile(("VBF_special/efficiency_algo_VBF_hltDoubleL2IsoTau26eta2p2.root"), "READ")
+histNum_BOR_cb = ROOT.TH1D(eventTuple_file.Get( "passed_normal" ) )
+histDen_BOR_forAll = ROOT.TH1D(eventTuple_file.Get( "total_normal" ) )
+
+eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
+histNum_BOR_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
+
+eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
+histNum_BOR_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
+
+eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
+histNum_BOR_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
+
+
+names["histTitle"] = "Absolute L1 Efficiency"
+names["outFile"] = plotDir+"/L1eff_abs_diag_cb"
+beautify_plot_canvas_1hist(histNum_BOR_cb, histDen_BOR_forAll, names)
+
+names["histTitle"] = "Absolute L1 Efficiency"
+names["outFile"] = ('{}/Rate_3kHz/L1_Efficiency_diagonal_3kHz').format(plotDir)
+beautify_plot_canvas_1hist(histNum_BOR_cnn3, histDen_BOR_forAll, names)
+
+names["histTitle"] = "Absolute L1 Efficiency"
+names["outFile"] = ('{}/Rate_4kHz/L1_Efficiency_diagonal_4kHz').format(plotDir)
+beautify_plot_canvas_1hist(histNum_BOR_cnn4, histDen_BOR_forAll, names)
+
+names["histTitle"] = "Absolute L1 Efficiency"
+names["outFile"] = ('{}/Rate_5kHz/L1_Efficiency_diagonal_5kHz').format(plotDir)
+beautify_plot_canvas_1hist(histNum_BOR_cnn5, histDen_BOR_forAll, names)
+
+
+# ZPrime Efficiencies
+'''
+
+Eff_cb =("{}/ZPrime/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
+BOR_eff_cb = ("{}/ZPrime/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTuplePath)
+# *** Draw superimposed algo efficiencies *****
+
+plotDir = GetPlotDir(args.machine)
+eventTuple_file = ROOT.TFile(("{}/ZPrime/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath), "READ")
+#eventTuple_file = ROOT.TFile(("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath), "READ")
+histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_algo" ) )
+histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_algo" ) )
+
+eff_CNN_3kHz = ("{}/Rate_3kHz/EfficienciesCNN_forRate3kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
+histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
+histDen_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
+
+eff_CNN_4kHz = ("{}/Rate_4kHz/EfficienciesCNN_forRate4kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
+histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
+histDen_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
+
+eff_CNN_5kHz = ("{}/Rate_5kHz/EfficienciesCNN_forRate5kHz.root").format(GetPlotDir(args.machine))
+tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
+histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
+histDen_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
+
+for i in range(1, histNum_cnn3.GetNbinsX()+1):
+    print(histNum_cnn3.GetBinContent(i),histNum_cnn4.GetBinContent(i),histNum_cnn5.GetBinContent(i))
+    print(histDen_cnn3.GetBinContent(i),histDen_cnn4.GetBinContent(i),histDen_cnn5.GetBinContent(i))
+
+names["histTitle"] = "Algorithmic Efficiency"
+names["yAxisTitle"] = "algo efficiency"
+names["outFile"] = plotDir+"/Algorithmic_Efficiency_ZPrime_diagonal"
+beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names)
+
+#  eff cutbased - eff DNN
+eventTuple_file = ROOT.TFile(("{}/ZPrime/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath), "READ")
+#eventTuple_file = ROOT.TFile(("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath), "READ")
 
 histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_normal" ) )
 histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_normal" ) )
 histDen_cnn3 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
 histDen_cnn4 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
 histDen_cnn5 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
-
-names["histTitle"] = "Absolute L2 Efficiency"
-names["outFile"] = plotDir+"/L2_Efficiency_diagonal"
+for i in range(1, histNum_cnn3.GetNbinsX()+1):
+    print(histNum_cnn3.GetBinContent(i),histNum_cnn4.GetBinContent(i),histNum_cnn5.GetBinContent(i))
+    print(histDen_cnn3.GetBinContent(i),histDen_cnn4.GetBinContent(i),histDen_cnn5.GetBinContent(i))
+names["histTitle"] = "Absolute Efficiency"
+names["yAxisTitle"] = "efficiency"
+names["outFile"] = plotDir+"/Absolute_Efficiency_ZPrime_diagonal"
 beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names)
-
 
 
 # BOR eff cutbased - BOR  eff  dnn (it should be the same) - 2 different plots
 eventTuple_file = ROOT.TFile(BOR_eff_cb, "READ")
 
 names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = plotDir+"/L1eff_abs_diag_cb"
+names["outFile"] = plotDir+"/L1eff_abs_ZPrime_diag_cb"
 histNum_cb = ROOT.TH1D(eventTuple_file.Get( "passed_normal" ) )
 histDen_cb = ROOT.TH1D(eventTuple_file.Get( "total_normal" ) )
 beautify_plot_canvas_1hist(histNum_cb, histDen_cb, names)
 
 histDen_cnn3 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
 names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = plotDir+"/L1_Efficiency_diagonal_3kHz"
+names["outFile"] = ('{}/Rate_3kHz/L1_Efficiency_ZPrime_diagonal_3kHz').format(plotDir)
 beautify_plot_canvas_1hist(histNum_cnn3, histDen_cnn3, names)
 
 histDen_cnn4 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
 names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = plotDir+"/L1_Efficiency_diagonal_4kHz"
+names["outFile"] = ('{}/Rate_4kHz/L1_Efficiency_ZPrime_diagonal_4kHz').format(plotDir)
 beautify_plot_canvas_1hist(histNum_cnn4, histDen_cnn4, names)
 
 histDen_cnn5 = ROOT.TH1D(eventTuple_file.Get( "total_normal") )
 names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = plotDir+"/L1_Efficiency_diagonal_5kHz"
+names["outFile"] = ('{}/Rate_5kHz/L1_Efficiency_ZPrime_diagonal_5kHz').format(plotDir)
 beautify_plot_canvas_1hist(histNum_cnn5, histDen_cnn5, names)
+'''
