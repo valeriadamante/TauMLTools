@@ -21,4 +21,11 @@
     <use name="TauMLTools/Core"/>
     <use name="TauMLTools/Analysis/"/>
 </bin>
+<bin name="HistoMaker" file="Draw_histos.cxx">
+    <use name="boost_program_options"/>
+    <use name="rootmath"/>
+    <use name="root"/>
+    <use name="TauMLTools/Core"/>
+</bin>
+
 -->
