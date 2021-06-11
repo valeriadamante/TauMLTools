@@ -62,6 +62,7 @@ Filter for L2 hadronic tau selection
 #include "TauMLTools/Core/interface/Tools.h"
 #include "TauMLTools/Core/interface/TextIO.h"
 #include "TauMLTools/Production/interface/L2TauTagNNFilter.h"
+#include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 // other utilities
 
 enum NNInputs {
