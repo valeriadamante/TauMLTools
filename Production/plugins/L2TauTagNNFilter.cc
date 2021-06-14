@@ -1,66 +1,7 @@
 /*
 Filter for L2 hadronic tau selection
 */
-// system include files
-#include <memory>
-#include <Math/VectorUtil.h>
-#include <boost/preprocessor/seq.hpp>
-#include <boost/preprocessor/variadic.hpp>
-#include <boost/math/constants/constants.hpp>
-#include "Compression.h"
-// user include files
-#include "FWCore/Framework/interface/EDFilter.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "CommonTools/Utils/interface/StringToEnumValue.h"
-// maybe I need them ? - utilities
-#include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/Candidate/interface/LeafCandidate.h"
-#include "DataFormats/Candidate/interface/CandidateFwd.h"
-#include "DataFormats/Common/interface/AssociationMap.h"
-#include "DataFormats/Candidate/interface/LeafCandidate.h"
-#include "DataFormats/Common/interface/Association.h"
-#include "DataFormats/Common/interface/AssociationVector.h"
-#include "DataFormats/Common/interface/HLTPathStatus.h"
-#include "DataFormats/Common/interface/HLTGlobalStatus.h"
-#include "DataFormats/Common/interface/TriggerResults.h"
-#include "FWCore/Common/interface/TriggerNames.h"
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "AnalysisDataFormats/TopObjects/interface/TtGenEvent.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
-// Geometry
-#include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
-#include "Geometry/CaloTopology/interface/CaloTowerTopology.h"
-#include "Geometry/CaloTopology/interface/CaloTowerConstituentsMap.h"
-#include "Geometry/CaloTopology/interface/HcalTopology.h"
-#include "Geometry/Records/interface/CaloGeometryRecord.h"
-// caloRecHit
-#include "DataFormats/CaloRecHit/interface/CaloRecHit.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
-#include "DataFormats/HcalDetId/interface/HcalDetId.h"
-#include "DataFormats/HcalRecHit/interface/HBHERecHit.h"
-#include "DataFormats/HcalRecHit/interface/HcalRecHitDefs.h"
-#include "DataFormats/HcalRecHit/interface/HFRecHit.h"
-#include "DataFormats/HcalRecHit/interface/HORecHit.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgoRcd.h"
-//Tracks
-#include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
-#include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
-#include "DataFormats/TrackReco/interface/HitPattern.h"
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-//vertices
-#include "DataFormats/VertexReco/interface/Vertex.h"
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-// L1 Tau
-#include "DataFormats/L1Trigger/interface/Tau.h"
-#include "TauMLTools/Core/interface/Tools.h"
-#include "TauMLTools/Core/interface/TextIO.h"
+
 #include "TauMLTools/Production/interface/L2TauTagNNFilter.h"
 #include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 // other utilities
@@ -99,6 +40,14 @@ enum NNInputs {
   PatatrackDz = 30
 };
 
+void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions){
+  // defining this function will lead to a *_cfi file being generated when compiling
+  edm::ParameterSetDescription desc;
+  desc.add<std::string>("graphPath");
+  desc.add<std::string>("inputTensorName");
+  desc.add<std::string>("outputTensorName");
+  descriptions.addWithDefaultLabel(desc);
+}
 
 L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg):
   processName(cfg.getParameter<std::string>("processName")),
@@ -110,9 +59,9 @@ L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg):
   Geometry_token(esConsumes<CaloGeometry,CaloGeometryRecord>()),
   pataVertices_token(consumes<reco::VertexCollection>(cfg.getParameter<edm::InputTag>("pataVertices"))),
   pataTracks_token(consumes<reco::TrackCollection>(cfg.getParameter<edm::InputTag>("pataTracks"))),
-  graphPath_(config.getParameter<std::string>("graphPath")),
-  inputTensorName_(config.getParameter<std::string>("inputTensorName")),
-  outputTensorName_(config.getParameter<std::string>("outputTensorName")),
+  graphPath_(cfg.getParameter<std::string>("graphPath")),
+  inputTensorName_(cfg.getParameter<std::string>("inputTensorName")),
+  outputTensorName_(cfg.getParameter<std::string>("outputTensorName")),
   graphDef_(nullptr),
   session_(nullptr)
   {
@@ -128,14 +77,7 @@ L2TauNNTag::~L2TauNNTag() {
   // (e.g. close files, deallocate resources etc.)
 }
 
-void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions){
-  // defining this function will lead to a *_cfi file being generated when compiling
-  edm::ParameterSetDescription desc;
-  desc.add<std::string>("graphPath");
-  desc.add<std::string>("inputTensorName");
-  desc.add<std::string>("outputTensorName");
-  descriptions.addWithDefaultLabel(desc);
-}
+
 
 
 float L2TauNNTag::DeltaPhi(Float_t phi1, Float_t phi2)
@@ -230,7 +172,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
   // run the evaluation
   std::vector<tensorflow::Tensor> outputs;
-  tensorflow::run(session, { { "input", cellGridMatrix } }, { "output" }, &outputs);
+  tensorflow::run(session_, { { "input", cellGridMatrix } }, { "output" }, &outputs);
 }
 
 bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
@@ -291,11 +233,11 @@ void L2TauNNTag::beginJob() {
 void L2TauNNTag::endJob() {
   // close the session
   tensorflow::closeSession(session_);
-
   // delete the graph
   delete graphDef_;
   graphDef_ = nullptr;
 }
 
 //define this as a plug-in
+#include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(L2TauNNTag);
