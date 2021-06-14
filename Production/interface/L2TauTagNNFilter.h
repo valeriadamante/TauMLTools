@@ -98,7 +98,7 @@ private:
   void beginJob() override;
   bool filter(edm::Event&, const edm::EventSetup&) override;
   void endJob() override;
-
+  VOID fillDescriptions(edm:: ConfigurationDescriptions& descriptions);
   static constexpr float pi = boost::math::constants::pi<float>();
   float DeltaPhi(Float_t phi1, Float_t phi2);
   float DeltaEta(Float_t eta1, Float_t eta2);
@@ -118,6 +118,11 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> pataVertices_token;
   edm::EDGetTokenT<reco::TrackCollection> pataTracks_token;
   std::vector<edm::EDGetTokenT<EcalRecHitCollection>> ecal_tokens;
+  std::string graphPath_;
+  std::string inputTensorName_;
+  std::string outputTensorName_;
+  tensorflow::GraphDef* graphDef_;
+  tensorflow::Session* session_;
 };
 
 
