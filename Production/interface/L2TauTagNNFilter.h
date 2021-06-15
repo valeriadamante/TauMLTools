@@ -52,7 +52,7 @@
 // L1 Tau
 #include "DataFormats/L1Trigger/interface/Tau.h"
 
- 
+
 
 // forward declarations
 struct caloRecHitCollections {
@@ -67,7 +67,7 @@ struct caloRecHitCollections {
 class L2TauNNTag : public edm::EDFilter{
 public:
   explicit L2TauNNTag(const edm::ParameterSet& cfg);
-  static void fillDescriptions(edm::ConfigurationDescriptions&);
+  //static void fillDescriptions(edm::ConfigurationDescriptions&);
   ~L2TauNNTag() override;
 
 private:
@@ -78,6 +78,7 @@ private:
   float DeltaPhi(Float_t phi1, Float_t phi2);
   float DeltaEta(Float_t eta1, Float_t eta2);
   float DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2);
+  std::vector<int> get_tensor_shape(tensorflow::Tensor& tensor);
   std::vector<int> ReorderByEnergy(std::vector<float>& energy);
   int FindVertexIndex(const reco::VertexCollection& vertices, const reco::Track& track);
   void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauBxCollection& l1Taus);
@@ -96,8 +97,11 @@ private:
   std::string graphPath_;
   std::string inputTensorName_;
   std::string outputTensorName_;
-  tensorflow::GraphDef* graphDef_;
-  tensorflow::Session* session_;
+  std::unique_ptr<tensorflow::GraphDef> graphDef_;
+
+  std::unique_ptr<tensorflow::Session> session_;
+  //tensorflow::GraphDef* graphDef_;
+  //tensorflow::Session* session_;
 };
 
 
