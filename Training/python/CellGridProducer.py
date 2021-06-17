@@ -311,11 +311,10 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
                         patatrack_pt, patatrack_DeltaEta, patatrack_DeltaPhi, patatrack_chi2, patatrack_ndof, patatrack_charge, patatrack_dxy, patatrack_dz, patatrack_hasVertex, patatrack_vert_z, patatrack_vert_ptv2, patatrack_vert_chi2, patatrack_vert_ndof):
     nTaus = len(nVertices)
     CellGrid = np.zeros((nTaus, n_cellsX, n_cellsY, nVars))
-    dR_min = -0.5
     dR_max = 0.5
-    dPhi_width = (dR_max-dR_min)/(n_cellsX)
-    dEta_width = (dR_max-dR_min)/(n_cellsY)
-    for tau in range(nTaus):
+    dPhi_width = 2*dR_max/(n_cellsX)
+    dEta_width = 2*dR_max/(n_cellsY)
+    for tau in range(0, nTaus):
         # 1. fill flat vars
         CellGrid[tau,:,:,np.intp(NNInputs.nVertices)] = nVertices[tau]
         CellGrid[tau,:,:,np.intp(NNInputs.l1Tau_pt)] = l1Tau_pt[tau]
@@ -326,8 +325,8 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
         for item in range(nEcal):
             deta = caloRecHit_e_DeltaEta[tau][item]
             dphi = caloRecHit_e_DeltaPhi[tau][item]
-            phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
-            eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
+            phi_idx = int(math.floor((dphi + dR_max) / dPhi_width))
+            eta_idx = int(math.floor((deta + dR_max) / dEta_width))
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergySum)]+= caloRecHit_e_energy[tau][item]
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalSize)]+= 1
             CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.EcalEnergyStdDev)]+= (caloRecHit_e_energy[tau][item])**2
@@ -352,8 +351,8 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
         for item in range(nHcal):
           deta = caloRecHit_had_DeltaEta[tau][item]
           dphi = caloRecHit_had_DeltaPhi[tau][item]
-          phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
-          eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
+          phi_idx = int(math.floor((dphi + dR_max) / dPhi_width))
+          eta_idx = int(math.floor((deta + dR_max) / dEta_width))
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergySum)]+= caloRecHit_had_energy[tau][item]
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalSize)]+= 1
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergyStdDev)]+= (caloRecHit_had_energy[tau][item])**2
@@ -379,8 +378,8 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
         for item in range(nPatatrack):
           deta = patatrack_DeltaEta[tau][item]
           dphi = patatrack_DeltaPhi[tau][item]
-          phi_idx = int(math.floor((dphi + dR_max) / dPhi_width + 0.5))
-          eta_idx = int(math.floor((deta + dR_max) / dEta_width + 0.5))
+          phi_idx = int(math.floor((dphi + dR_max) / dPhi_width))
+          eta_idx = int(math.floor((deta + dR_max) / dEta_width))
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackPtSum)]+= patatrack_pt[tau][item]
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackSize)]+= 1
           CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.PatatrackChargeSum)]+= patatrack_charge[tau][item]
