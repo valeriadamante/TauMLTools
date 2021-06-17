@@ -2,6 +2,8 @@
 #define TauMLTools_Production_L2TauTagNNFilter_h
 // system include files
 #include <memory>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <Math/VectorUtil.h>
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/variadic.hpp>
@@ -53,12 +55,10 @@
 #include "DataFormats/L1Trigger/interface/Tau.h"
 
 
-
 // forward declarations
 struct caloRecHitCollections {
   const HBHERecHitCollection  *hbhe;
   const HORecHitCollection *ho;
-  const HFRecHitCollection *hf;
   const EcalRecHitCollection *eb;
   const EcalRecHitCollection *ee;
   const CaloGeometry *Geometry;
@@ -80,15 +80,17 @@ private:
   float DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2);
   std::vector<int> get_tensor_shape(tensorflow::Tensor& tensor);
   std::vector<int> ReorderByEnergy(std::vector<float>& energy);
+  void initializeTensor(tensorflow::Tensor& tensor);
+  void checknan(tensorflow::Tensor& tensor, bool printoutTensor);
+  void standardizeTensor(tensorflow::Tensor& tensor, std::string normDictPath);
   int FindVertexIndex(const reco::VertexCollection& vertices, const reco::Track& track);
-  void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauBxCollection& l1Taus);
+  void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauBxCollection& l1Taus, int evt_id);
 
 private:
   std::string processName;
   edm::EDGetTokenT<l1t::TauBxCollection> l1Taus_token;
   edm::EDGetTokenT<HBHERecHitCollection> hbhe_token;
   edm::EDGetTokenT<HORecHitCollection> ho_token;
-  edm::EDGetTokenT<HFRecHitCollection> hf_token;
   std::vector<edm::InputTag> ecalLabels;
   edm::ESGetToken<CaloGeometry, CaloGeometryRecord> Geometry_token;
   edm::EDGetTokenT<reco::VertexCollection> pataVertices_token;
@@ -97,8 +99,8 @@ private:
   std::string graphPath_;
   std::string inputTensorName_;
   std::string outputTensorName_;
+  std::string normalizationDict_;
   std::unique_ptr<tensorflow::GraphDef> graphDef_;
-
   std::unique_ptr<tensorflow::Session> session_;
   //tensorflow::GraphDef* graphDef_;
   //tensorflow::Session* session_;

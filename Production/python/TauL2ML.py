@@ -21,14 +21,14 @@ options.register('inputTensorName', 'input', VarParsing.multiplicity.singleton, 
                  "give input Tensor Name.")
 options.register('outputTensorName', 'output', VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  "give output Tensor Name.")
+options.register('normalizationDict', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/TauMLTools/Training/python/NormalizationDict.json', VarParsing.multiplicity.singleton, VarParsing.varType.string,
+                 "give output Tensor Name.")
 options.register('dumpPython', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
                  "Dump full config into stdout.")
 
 options.parseArguments()
-print(("sampletype = {}").format(options.sampleType))
 dataDict = {"Run3MC" : False, "Run2Data" : True}
-isData = dataDict[options.sampleType]
-print(("isData = {}").format(isData))
+isData = dataDict[options.sampleType] 
 processName = 'MLProva'
 process = cms.Process(processName, Run3)
 
@@ -145,10 +145,9 @@ if isData:
 else:
     from HLTrigger.Configuration.customizeHLTforMC import customizeHLTforMC
     process = customizeHLTforMC(process)
-    print("process has been custmized HLT for MC!!")
 
 from TauMLTools.Production.ApplyCNNL2 import update
-process = update(process,options.graphPath, options.inputTensorName, options.outputTensorName)
+process = update(process,options.graphPath, options.inputTensorName, options.outputTensorName,options.normalizationDict)
 
 # End of customisation functions
 
