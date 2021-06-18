@@ -22,7 +22,7 @@ struct Arguments {
     //run::Argument<float> training_weight_factor{"training-weight-factor",
     //    "additional factor to the normalization of the training weights", 4.f};
     //run::Argument<int> parity{"parity", "take odd (parity=1), even (parity=0) or all (parity=-1) events", -1};
-    run::Argument<int> isQCDDataVBF{"isQCDDataVBF", "0 = QCD; 1 = TT,DY,WJets; 2 = ZPrime,VBF; 3=Data", false};
+    run::Argument<std::string> isQCDDataVBF{"isQCDDataVBF", "QCD, TT, DY, WJets, ZPrime, VBF, Data", false};
 };
 
 namespace analysis {
@@ -250,7 +250,7 @@ private:
     {
 
           auto& out = trainingTauTuple();
-          float l1pt_threshold= 28.0;
+          float l1pt_threshold= 20.0;
           float genlep_eta_threshold = 2.1 ;
           float genlep_VisPt_threshold = 15.0 ;
           float delta_R_threshold = 0.5;
@@ -260,9 +260,10 @@ private:
           };
 
          // QCD
-         if(isQCDDataVBF==0){
+         if(isQCDDataVBF=="QCD"){
             for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
-                if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+              //if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+              if(tau.l1Tau_pt.at(k) >= l1pt_threshold) {
                   taus_indices.push_back(k);
                   out.genLepton_kind = 6;
                   out.genLepton_vis_pt = -100.;
@@ -275,7 +276,7 @@ private:
             Fill_L1_Taus(taus_indices);
           }
          // TT, DY and WJets
-         else if(isQCDDataVBF==1){
+         else if(isQCDDataVBF=="TT"||isQCDDataVBF=="DY"||isQCDDataVBF=="WJets"){
             //std::cout<< "evento .. " << tau.evt << std::endl ;
             for (std::vector<int>::size_type i = 0; i != tau.genLepton_kind.size(); i++){
                 /* 0. define useful quantities */
@@ -304,7 +305,8 @@ private:
                         continue;
                     }
                     /* 2-2. isolation requirement and pt threshold on l1tau */
-                    if (tau.l1Tau_pt.at(j) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(j) > 0 || tau.l1Tau_pt.at(j) >= 70)) {
+                    if (tau.l1Tau_pt.at(j) >= l1pt_threshold) {
+                    //if (tau.l1Tau_pt.at(j) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(j) > 0 || tau.l1Tau_pt.at(j) >= 70)) {
                         //std::cout << "analizzo il tau ... " << j << std::endl;
 
                         /* 2-3. let's calculate deltaR: if it's the minimum */
@@ -327,10 +329,12 @@ private:
             } // end of loop over genleptons
             //std::cout << std::endl;
          } // end of else
+
+
          // VBF and ZPrime
-         else if(isQCDDataVBF==2) {
+         else if(isQCDDataVBF=="VBF" || isQCDDataVBF=="ZPrime") {
            // first let's check event passing double big or
-              if(tau.defaultDiTauPath_lastModuleIndex>5){
+              //if(tau.defaultDiTauPath_lastModuleIndex>5){
                   for (std::vector<int>::size_type i = 0; i != tau.genLepton_kind.size(); i++){
                       /* 0. define useful quantities */
                       float previous_deltaR = 100.0;
@@ -354,7 +358,8 @@ private:
                           }
 
                           /* 2-2. isolation requirement and pt threshold on l1tau */
-                          if (tau.l1Tau_pt.at(j) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(j) > 0 || tau.l1Tau_pt.at(j) >= 70)) {
+                          //if (tau.l1Tau_pt.at(j) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(j) > 0 || tau.l1Tau_pt.at(j) >= 70)) {
+                          if (tau.l1Tau_pt.at(j) >= l1pt_threshold  ) {
                               /* 2-3. let's calculate deltaR: if it's the minimum */
                               float current_deltaR = deltaR(tau.l1Tau_phi.at(j), tau.l1Tau_eta.at(j), tau.genLepton_vis_phi.at(i), tau.genLepton_vis_eta.at(i));
                               if (current_deltaR <0.3 && current_deltaR < previous_deltaR ){
@@ -369,13 +374,14 @@ private:
                       Fill_L1_Taus(current_tau_index);
                   } // end of loop over genleptons
 
-              } // end of condition of ditauPath to have last module index > hltL1sDoubleTauBigOR (== 5 -> check on gdoc or by running getPathNames.py !!)
+              //} // end of condition of ditauPath to have last module index > hltL1sDoubleTauBigOR (== 5 -> check on gdoc or by running getPathNames.py !!)
           } // end of else
           // DATA --> pt threshold is 28
-          else if(isQCDDataVBF==3) {
+          else if(isQCDDataVBF=="Data") {
                //if(tau.defaultDiTauPath_lastModuleIndex>5){
                  for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
-                     if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+                   //if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+                   if( tau.l1Tau_pt.at(k) >= l1pt_threshold ) {
                        taus_indices.push_back(k);
                        out.genLepton_kind = 6;
                        out.genLepton_vis_pt = -100.;
@@ -389,25 +395,7 @@ private:
                //}
 
           }
-          // DATA for rate evaluation -> pt min is 32
-          else if(isQCDDataVBF==4) {
-               if(tau.defaultDiTauPath_lastModuleIndex>5){
-                 for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
-                     if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
-                       taus_indices.push_back(k);
-                       out.genLepton_kind = 6;
-                       out.genLepton_vis_pt = -100.;
-                       out.genLepton_vis_eta = -100.;
-                       out.genLepton_vis_phi = -100.;
-                       out.genLepton_charge = -100;
-                       out.genLepton_vis_mass = -100.;
-                     }
-                 }
-                 Fill_L1_Taus(taus_indices);
-               }
 
-          }
-          // in other cases it should rise an exception!!
     }
     #undef CP_BR
 
