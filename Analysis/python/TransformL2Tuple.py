@@ -84,14 +84,14 @@ isQCD_dict = {'DY':'1',
                 'VBF':'2',
                 'WJets':'1',
                 'Zprime':'2',
-                'EphemeralHLTPhysics1':'3',
-                'EphemeralHLTPhysics2':'3',
-                'EphemeralHLTPhysics3':'3',
-                'EphemeralHLTPhysics4':'3',
-                'EphemeralHLTPhysics5':'3',
-                'EphemeralHLTPhysics6':'3',
-                'EphemeralHLTPhysics7':'3',
-                'EphemeralHLTPhysics8':'3'}
+                'EphemeralHLTPhysics1':'4',
+                'EphemeralHLTPhysics2':'4',
+                'EphemeralHLTPhysics3':'4',
+                'EphemeralHLTPhysics4':'4',
+                'EphemeralHLTPhysics5':'4',
+                'EphemeralHLTPhysics6':'4',
+                'EphemeralHLTPhysics7':'4',
+                'EphemeralHLTPhysics8':'4'}
 isQCD = isQCD_dict[args.sample]
 
 #print directory + "\n"

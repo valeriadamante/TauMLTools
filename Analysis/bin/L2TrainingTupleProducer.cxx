@@ -22,7 +22,7 @@ struct Arguments {
     //run::Argument<float> training_weight_factor{"training-weight-factor",
     //    "additional factor to the normalization of the training weights", 4.f};
     //run::Argument<int> parity{"parity", "take odd (parity=1), even (parity=0) or all (parity=-1) events", -1};
-    run::Argument<int> isQCDDataVBF{"isQCDDataVBF", "0 = QCD; 1 = TT,DY,ZPrime; 2 = VBF; 3=Data", false};
+    run::Argument<int> isQCDDataVBF{"isQCDDataVBF", "0 = QCD; 1 = TT,DY,WJets; 2 = ZPrime,VBF; 3=Data", false};
 };
 
 namespace analysis {
@@ -250,7 +250,7 @@ private:
     {
 
           auto& out = trainingTauTuple();
-          float l1pt_threshold= 32.0;
+          float l1pt_threshold= 28.0;
           float genlep_eta_threshold = 2.1 ;
           float genlep_VisPt_threshold = 15.0 ;
           float delta_R_threshold = 0.5;
@@ -274,7 +274,7 @@ private:
             }
             Fill_L1_Taus(taus_indices);
           }
-         // TT, DY and ZPrime
+         // TT, DY and WJets
          else if(isQCDDataVBF==1){
             //std::cout<< "evento .. " << tau.evt << std::endl ;
             for (std::vector<int>::size_type i = 0; i != tau.genLepton_kind.size(); i++){
@@ -327,7 +327,7 @@ private:
             } // end of loop over genleptons
             //std::cout << std::endl;
          } // end of else
-         // VBF
+         // VBF and ZPrime
          else if(isQCDDataVBF==2) {
            // first let's check event passing double big or
               if(tau.defaultDiTauPath_lastModuleIndex>5){
@@ -371,8 +371,26 @@ private:
 
               } // end of condition of ditauPath to have last module index > hltL1sDoubleTauBigOR (== 5 -> check on gdoc or by running getPathNames.py !!)
           } // end of else
-          // DATA
+          // DATA --> pt threshold is 28
           else if(isQCDDataVBF==3) {
+               //if(tau.defaultDiTauPath_lastModuleIndex>5){
+                 for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
+                     if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+                       taus_indices.push_back(k);
+                       out.genLepton_kind = 6;
+                       out.genLepton_vis_pt = -100.;
+                       out.genLepton_vis_eta = -100.;
+                       out.genLepton_vis_phi = -100.;
+                       out.genLepton_charge = -100;
+                       out.genLepton_vis_mass = -100.;
+                     }
+                 }
+                 Fill_L1_Taus(taus_indices);
+               //}
+
+          }
+          // DATA for rate evaluation -> pt min is 32
+          else if(isQCDDataVBF==4) {
                if(tau.defaultDiTauPath_lastModuleIndex>5){
                  for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
                      if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {

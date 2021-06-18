@@ -18,7 +18,7 @@ struct Arguments {
     run::Argument<std::string> output{"output", "output root file with training tuple"};
     run::Argument<unsigned> n_threads{"n-threads", "number of threads", 1};
     run::Argument<Long64_t> first_iteration{"first-iteration", "first iterations", 0};
-    run::Argument<Long64_t> max_iterations{"max-iterations", "max iterations", 3770};
+    run::Argument<Long64_t> max_iterations{"max-iterations", "max iterations", 3780};
     //run::Argument<Long64_t> end_entry{"end-entry", "end entry", std::numeric_limits<Long64_t>::max()};
     //run::Argument<float> training_weight_factor{"training-weight-factor",
     //    "additional factor to the normalization of the training weights", 4.f};
@@ -36,7 +36,8 @@ public:
     using TrainingTau = tau_train_tuple::Tau;
     using TrainingTauTuple = tau_train_tuple::TauTrainTuple;
     //std::vector<std::string> inputFiles = {absolute_path+"all_WJetsToLNu.root", absolute_path+"all_TT.root" , absolute_path+"all_DY.root", absolute_path+"all_ZPrime.root", absolute_path+"QCDFiltered.root" };
-    std::vector<int> all_events = {26362, 139019, 182810, 405918};
+    //std::vector<int> all_events = {26362, 139019, 182810, 405918};
+    std::vector<int> all_events = {26363, 139059, 182811, 407783};
     std::vector<int> all_events_norm = {7, 37, 49, 107};
     const int filling_WJ = 7 ;
     const int filling_TT = 37 ;
@@ -45,7 +46,7 @@ public:
     const int filling_QCD = 107 ;
 
     DataSetProducer(const Arguments& _args) :
-        args(_args), WJetFile(root_ext::OpenRootFile(absolute_path+"all_WJetsToLNu.root")), TTFile(root_ext::OpenRootFile(absolute_path+"all_TT.root")), /*ZPrimeFile(root_ext::OpenRootFile(absolute_path+"all_ZPrime.root")),*/ DYFile(root_ext::OpenRootFile(absolute_path+"all_DY.root")), QCDFile(root_ext::OpenRootFile(absolute_path+"QCDFiltered.root")),outputFile(root_ext::CreateRootFile(args.output(), ROOT::kLZ4, 4)), WJTuple(WJetFile.get(), true), TTTuple( TTFile.get(), true), /*ZPrimeTuple( ZPrimeFile.get(), true),*/ DYTuple( DYFile.get(), true), QCDTuple( QCDFile.get(), true), outputTuple(outputFile.get(), false)
+        args(_args), WJetFile(root_ext::OpenRootFile(absolute_path+"all_WJetsToLNu.root")), TTFile(root_ext::OpenRootFile(absolute_path+"all_TT.root")), /*ZPrimeFile(root_ext::OpenRootFile(absolute_path+"all_ZPrime.root")),*/ DYFile(root_ext::OpenRootFile(absolute_path+"all_DY.root")), QCDFile(root_ext::OpenRootFile(absolute_path+"QCDFiltered.root")),outputFile(root_ext::CreateRootFile(absolute_path+args.output(), ROOT::kLZ4, 4)), WJTuple(WJetFile.get(), true), TTTuple( TTFile.get(), true), /*ZPrimeTuple( ZPrimeFile.get(), true),*/ DYTuple( DYFile.get(), true), QCDTuple( QCDFile.get(), true), outputTuple(outputFile.get(), false)
     {
 
         if(args.n_threads() > 1)
@@ -55,7 +56,7 @@ public:
     void Run()
     {
         const Long64_t first_iteration =0;
-        const Long64_t n_iterations = 3770;
+        const Long64_t n_iterations = 3780;
         int filling_counter = std::max(first_iteration, args.first_iteration());
         int WJ_counter =std::max(first_iteration, args.first_iteration()*filling_WJ);
         int TT_counter =std::max(first_iteration, args.first_iteration()*filling_TT);
