@@ -64,6 +64,7 @@ public:
     void SetQCDFile(std::vector<std::string> _QCDFile){QCDFile=_QCDFile;}
     void SetQCDFilteredFile(std::vector<std::string> _QCDFilteredFile){QCDFilteredFile=_QCDFilteredFile;}
     void SetDataSetTrainingFile(std::vector<std::string> _DataSetTrainingFile){DataSetTrainingFile=_DataSetTrainingFile;}
+    void InsertBranch(int i, std::string colName){all_branches.insert( std::pair<int,std::string>(i, colName));}
 
     /* Getters */
     std::string GetAbsolutePath() {return absolute_path;}
@@ -97,7 +98,7 @@ private:
     template <typename T>
     void plot(T sig, T bkgFiltered, T bkg, const std::string &VarName);
     template <typename T>
-    void plot1(T h1,   const std::string &VarName, const std::string& outDir_path);
+    void plot1(T h1, const std::string &VarName, const std::string& outDir_path, const std::string sigBckg);
     template <typename T>
     void plot2(T h1, T h2,  const std::string &VarName, const std::string& outDir_path);
     template <typename T>
