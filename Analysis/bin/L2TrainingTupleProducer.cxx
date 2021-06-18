@@ -22,7 +22,7 @@ struct Arguments {
     //run::Argument<float> training_weight_factor{"training-weight-factor",
     //    "additional factor to the normalization of the training weights", 4.f};
     //run::Argument<int> parity{"parity", "take odd (parity=1), even (parity=0) or all (parity=-1) events", -1};
-    run::Argument<std::string> isQCDDataVBF{"isQCDDataVBF", "QCD, TT, DY, WJets, ZPrime, VBF, Data", false};
+    run::Argument<std::string> isQCDDataVBF{"isQCDDataVBF", "QCD, TT, DY, WJets, ZPrime, VBF, Data"};
 };
 
 namespace analysis {
@@ -246,7 +246,7 @@ private:
       } // end of loop over l1taus to fill
     }
 
-    void FillTauBranches(const Tau& tau, int isQCDDataVBF)
+    void FillTauBranches(const Tau& tau, std::string isQCDDataVBF)
     {
 
           auto& out = trainingTauTuple();
@@ -329,6 +329,8 @@ private:
             } // end of loop over genleptons
             //std::cout << std::endl;
          } // end of else
+
+
 
     }
     #undef CP_BR
