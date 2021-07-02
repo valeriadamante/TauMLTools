@@ -85,28 +85,37 @@ void DataSetProducer::CountEventInSignalAndBackground(){
     ROOT::RDataFrame dfQCDFiltered("L2TauTrainTuple", QCDFilteredFile);
     int previous_bckg_events = dfBackground.Count().GetValue();
     int bckg_current_events = dfQCDFiltered.Count().GetValue();
-    //std::cout<< "before "<< dfBackground.Count().GetValue()<<" after "<<bckg_current_events << "\n signal events = " << dfSignal.Count().GetValue() <<std::endl;
-
+    std::cout<< "QCD events before filtering "<< dfBackground.Count().GetValue()<<"\nQCD events after filtering "<<bckg_current_events <<std::endl;
+    //std::cout <<"signal events for single sample: \t";
     std::vector<int> all_events = DataSetProducer::CountEvents();
+    std::vector<std::string> all_files = SignalFiles;
+    all_files.insert( all_files.end(), QCDFilteredFile.begin(), QCDFilteredFile.end() );
     all_events.push_back(bckg_current_events);
     int sum = 0;
-    for (auto&i : all_events){
-      std::cout <<i << std::endl;
-      sum += i;
+    for (int i =0; i< all_events.size(); i++){
+        std::cout << "sample = " << all_files[i] << "\t \t \t events "<< all_events[i]<<std::endl;
+        sum += all_events[i];
     }
+
     // sum = 3303918;
-    std::cout<<"sum = " << sum<<std::endl;
+    int sigEvts = sum-bckg_current_events;
+    std::cout<<"Total signal events  = " << sigEvts <<std::endl;
+    std::cout<<"Total events  = " << sum<<std::endl;
+    std::cout<<"difference between signal & background  = " << std::abs(sigEvts - bckg_current_events)<<std::endl;
+    std::cout<<"difference between signal & background relative to sig = " << float(float(std::abs(sigEvts - bckg_current_events))/float(sigEvts))<<std::endl;
+    std::cout<<"difference between signal & background relative to bckg = " << float(float(std::abs(sigEvts - bckg_current_events))/float(bckg_current_events))<<std::endl;
+    std::cout<<"difference between signal & background relative to all = " << float(float(std::abs(sigEvts - bckg_current_events))/float(sum))<<std::endl;
     std::vector<float> all_events_norm(all_events.size());
     float rescale_to_duecento = 200./float(sum);
     std::transform(all_events.begin(), all_events.end(), all_events_norm.begin(),
                    [&](int i) { return i * rescale_to_duecento; });
-    for (auto&i : all_events_norm){
-       std::cout<<i<<std::endl;
+    for (int i =0; i< all_events_norm.size(); i++){
+        std::cout << "sample = " << all_files[i] << "\t \t \tevents scaled to 200 "<< all_events_norm[i]<<std::endl;
     }
 
 }
 template <typename T>
-void DataSetProducer::plot1(T h1, const std::string &VarName, const std::string& outDir_path)
+void DataSetProducer::plot1(T h1, const std::string &VarName, const std::string& outDir_path, const std::string sigBckg)
 {
    //gStyle->SetOptStat(0);
    gStyle->SetTextFont(42);
@@ -131,7 +140,7 @@ void DataSetProducer::plot1(T h1, const std::string &VarName, const std::string&
    hist1.DrawClone("HIST");
    legend->Draw("SAME");
    // Save plot
-   c->SaveAs((outDir_path+VarName+".pdf").c_str());
+   c->SaveAs((outDir_path+VarName+"_"+sigBckg+".pdf").c_str());
 }
 template <typename T>
 void DataSetProducer::plot2(T h1, T h2, const std::string &VarName, const std::string& outDir_path)
@@ -267,21 +276,15 @@ void DataSetProducer::GetHistogramsSignalQCD(int n_var, bool use_binning){
   ROOT::RDataFrame dfSignal("L2TauTrainTuple", SignalFiles);
   ROOT::RDataFrame dfQCD("L2TauTrainTuple", QCDFile);
   ROOT::RDataFrame dfQCDFiltered("L2TauTrainTuple", QCDFilteredFile);
-  int i=1;
-  for (auto &&colName : dfSignal.GetColumnNames()) {
-      all_branches.insert( std::pair<int,std::string>(i, colName));
-      i++;
-  }
-  all_branches_binning = {{"genEventWeight",{50, -0.5,1.5}},{"genLepton_vis_pt",{100, 0, 1000}},{"genLepton_vis_eta",{100, -4.5, 5.5}},{"genLepton_vis_phi",{70, -3.5, 3.5}},{"genLepton_vis_mass",{100, -0.1, 9.9}},{"l1Tau_pt",{50, 0, 250}},{"l1Tau_eta",{100, -4.5, 5.5}},{"l1Tau_phi",{70, -3.5, 3.5}},{"l1Tau_mass",  {100, -0,1, 9.9}},{"caloRecHit_ee_rho",{100, 0, 300}},{"caloRecHit_eb_rho",{100, 0, 300}},{"caloRecHit_ee_eta",{100, -4.5, 5.5}},{"caloRecHit_eb_eta",{100, -4.5, 5.5}},{"caloRecHit_ee_phi",{70, -3.5, 3.5}},{"caloRecHit_eb_phi",{70, -3.5, 3.5}},{"caloRecHit_ee_energy",{60, 0, 6}},{"caloRecHit_eb_energy",{100, 0, 80}},{"caloRecHit_ee_time",{50, -0.5, 9.5}},{"caloRecHit_eb_time",{50, -0.5, 9.5}},{"caloRecHit_ee_chi2",{100, -0.5, 60.5}},{"caloRecHit_eb_chi2",{100, -0.5, 60.5}},{"caloRecHit_ee_energyError",{50, -0.5, 9.5}},{"caloRecHit_eb_energyError",{50, -0.5, 9.5}},{"caloRecHit_ee_timeError",{50, -0.5, 9.5}},{"caloRecHit_eb_timeError",{50, -0.5, 9.5}},{"caloRecHit_hbhe_rho",{100, 0, 300}},{"caloRecHit_hbhe_eta",{100, -4.5, 5.5}},{"caloRecHit_hbhe_phi",{70, -3.5, 3.5}},{"caloRecHit_hbhe_energy",{100, 0, 80}},{"caloRecHit_hbhe_time",{50, -0.5, 9.5}},{"caloRecHit_hbhe_chi2",{100, -0.5, 60.5}},{"caloRecHit_ho_rho",{100, 0, 300}},{"caloRecHit_ho_eta",{100, -4.5, 5.5}},{"caloRecHit_ho_phi",{70, -3.5, 3.5}},{"caloRecHit_ho_energy",{100, 0, 80}},{"caloRecHit_ho_time",{50, -0.5, 9.5}},{"caloRecHit_hf_rho",{100, 0, 300}},{"caloRecHit_hf_eta",{100, -4.5, 5.5}},{"caloRecHit_hf_phi",{70, -3.5, 3.5}},{"caloRecHit_hf_energy",{100, 0, 80}},{"caloRecHit_hf_time",{50, -0.5, 9.5}},{"caloRecHit_hf_timeFalling",{50, -0.5, 9.5}},{"patatrack_pt",{50, -0.5, 20.5}},{"patatrack_eta",{100, -4.5, 5.5}},{"patatrack_phi",{70, -3.5, 3.5}},{"patatrack_chi2",{100, -0.5, 60.5}},{"patatrack_dxy",{60, -0.3, 0.3}},{"patatrack_dz",{300, -15.5, 15.5}},{"patavert_z",{300, -15.5, 15.5}},{"patavert_weight",{100, 0, 2000}},{"patavert_ptv2",{100}},{"patavert_chi2",{100, -0.5, 1000.5}},{"caloRecHit_ee_detId",{1000}},{"caloRecHit_eb_flagsBits",{100}},{"caloRecHit_ee_isRecovered",{100}},{"caloRecHit_eb_isRecovered",{100}},{"caloRecHit_ee_isTimeValid",{100}},{"caloRecHit_eb_isTimeValid",{100}},{"caloRecHit_ee_isTimeErrorValid",{100}},{"caloRecHit_eb_isTimeErrorValid",{100}},{"caloRecHit_hbhe_detId",{100}},{"caloRecHit_hbhe_flags",{100}},{"caloRecHit_ho_detId",{100}},{"caloRecHit_ho_aux",{100}},{"caloRecHit_hf_flags",{100}},{"caloRecHit_hf_auxHF",{100}},{"patatrack_charge",{50, -0.5, 1.5}},{"patatrack_quality",{50, -0.5, 1.5}},{"patatrack_vertex_id",{50, 0, 100}},{"patavert_ndof",{100, 0, 200}},{"run",{10, -0.5,1.5}},{"lumi",{1000}},{"evt",{1000}},{"sampleType",{10, -0.5,1.5}},{"genLepton_index",{60, -0.1, 5,9}},{"genLepton_kind",{100, -0.5, 9.5}},{"genLepton_charge",{10, -0.5, 1.5}},{"caloRecHit_eb_detId",{1000}},{"caloRecHit_ee_flagsBits",{100}},{"caloRecHit_hf_detId",{100}},{"caloRecHit_hf_aux",{100}},{"patatrack_ndof",{10, 0, 10}},{"l1Tau_hwIso",{10, -0.5,1.5}},{"l1Tau_hwQual",{10, -0.5,1.5}},{"l1Tau_towerIEta",{10, -0.5,1.5}},{"l1Tau_towerIPhi",{10, -0.5,1.5}},{"l1Tau_rawEt",{10, -0.5,1.5}},{"l1Tau_isoEt",{10, -0.5,1.5}},{"l1Tau_hasEM",{10, -0.5,1.5}},{"l1Tau_isMerged" ,{10, -0.5,1.5}},{"l1Tau_index",{50, 0, 10}},{"caloRecHit_ho_flags",{100}} };
+  all_branches_binning = {{"genEventWeight",{50, -0.5,1.5}},{"genLepton_vis_pt",{100, 0, 1000}},{"genLepton_vis_eta",{100, -4.5, 5.5}},{"genLepton_vis_phi",{70, -3.5, 3.5}},{"genLepton_vis_mass",{100, -0.1, 9.9}},{"l1Tau_pt",{50, 0, 250}},{"l1Tau_eta",{100, -4.5, 5.5}},{"l1Tau_phi",{70, -3.5, 3.5}},{"l1Tau_mass",  {100, -0,1, 9.9}},{"caloRecHit_ee_rho",{100, 0, 300}},{"caloRecHit_eb_rho",{100, 0, 300}},{"caloRecHit_ee_eta",{100, -4.5, 5.5}},{"caloRecHit_eb_eta",{100, -4.5, 5.5}},{"caloRecHit_ee_phi",{70, -3.5, 3.5}},{"caloRecHit_eb_phi",{70, -3.5, 3.5}},{"caloRecHit_ee_energy",{60, 0, 6}},{"caloRecHit_eb_energy",{100, 0, 80}},{"caloRecHit_ee_time",{50, -0.5, 9.5}},{"caloRecHit_eb_time",{50, -0.5, 9.5}},{"caloRecHit_ee_chi2",{100, -0.5, 60.5}},{"caloRecHit_eb_chi2",{100, -0.5, 60.5}},{"caloRecHit_ee_energyError",{50, -0.5, 9.5}},{"caloRecHit_eb_energyError",{50, -0.5, 9.5}},{"caloRecHit_ee_timeError",{50, -0.5, 9.5}},{"caloRecHit_eb_timeError",{50, -0.5, 9.5}},{"caloRecHit_hbhe_rho",{100, 0, 300}},{"caloRecHit_hbhe_eta",{100, -4.5, 5.5}},{"caloRecHit_hbhe_phi",{70, -3.5, 3.5}},{"caloRecHit_hbhe_energy",{100, 0, 80}},{"caloRecHit_hbhe_time",{50, -0.5, 9.5}},{"caloRecHit_hbhe_chi2",{100, -0.5, 60.5}},{"caloRecHit_ho_rho",{100, 0, 300}},{"caloRecHit_ho_eta",{100, -4.5, 5.5}},{"caloRecHit_ho_phi",{70, -3.5, 3.5}},{"caloRecHit_ho_energy",{100, 0, 80}},{"caloRecHit_ho_time",{50, -0.5, 9.5}},{"caloRecHit_hf_rho",{100, 0, 300}},{"caloRecHit_hf_eta",{100, -4.5, 5.5}},{"caloRecHit_hf_phi",{70, -3.5, 3.5}},{"caloRecHit_hf_energy",{100, 0, 80}},{"caloRecHit_hf_time",{50, -0.5, 9.5}},{"caloRecHit_hf_timeFalling",{50, -0.5, 9.5}},{"patatrack_pt",{50, -0.5, 20.5}},{"patatrack_eta",{100, -4.5, 5.5}},{"patatrack_phi",{70, -3.5, 3.5}},{"patatrack_chi2",{100, -0.5, 60.5}},{"patatrack_dxy",{60, -0.3, 0.3}},{"patatrack_dz",{300, -15.5, 15.5}},{"patavert_z",{300, -15.5, 15.5}},{"patavert_weight",{100, 0, 2000}},{"patavert_ptv2",{100}},{"patavert_chi2",{100, -0.5, 1000.5}},{"caloRecHit_ee_detId",{1000}},{"caloRecHit_eb_flagsBits",{100}},{"caloRecHit_ee_isRecovered",{100}},{"caloRecHit_eb_isRecovered",{100}},{"caloRecHit_ee_isTimeValid",{100}},{"caloRecHit_eb_isTimeValid",{100}},{"caloRecHit_ee_isTimeErrorValid",{100}},{"caloRecHit_eb_isTimeErrorValid",{100}},{"caloRecHit_hbhe_detId",{100}},{"caloRecHit_hbhe_flags",{100}},{"caloRecHit_ho_detId",{100}},{"caloRecHit_ho_aux",{100}},{"caloRecHit_hf_flags",{100}},{"caloRecHit_hf_auxHF",{100}},{"patatrack_charge",{50, -0.5, 1.5}},{"patatrack_quality",{50, -0.5, 1.5}},{"patatrack_vertex_id",{50, 0, 100}},{"patavert_ndof",{100, 0, 200}},{"run",{10, -0.5,1.5}},{"lumi",{1000}}, {"defaultDiTauPath_result",{10}}, {"defaultDiTauPath_lastModuleIndex",{1000}},{"evt",{1000}},{"sampleType",{10, -0.5,1.5}},{"genLepton_index",{60, -0.1, 5,9}},{"genLepton_kind",{100, -0.5, 9.5}},{"genLepton_charge",{10, -0.5, 1.5}},{"caloRecHit_eb_detId",{1000}},{"caloRecHit_ee_flagsBits",{100}},{"caloRecHit_hf_detId",{100}},{"caloRecHit_hf_aux",{100}},{"patatrack_ndof",{10, 0, 10}},{"l1Tau_hwIso",{10, -0.5,1.5}},{"l1Tau_hwQual",{10, -0.5,1.5}},{"l1Tau_towerIEta",{10, -0.5,1.5}},{"l1Tau_towerIPhi",{10, -0.5,1.5}},{"l1Tau_rawEt",{10, -0.5,1.5}},{"l1Tau_isoEt",{10, -0.5,1.5}},{"l1Tau_hasEM",{10, -0.5,1.5}},{"l1Tau_isMerged" ,{10, -0.5,1.5}},{"l1Tau_index",{50, 0, 10}},{"caloRecHit_ho_flags",{100}} };
   bool found = false;
   if (all_branches.find(n_var) != all_branches.end()){
       found=true;
   }
-  if(found==false) return;
+  if(found==false) {return;}
   std::string variabile = all_branches.at(n_var);
-  dfSignal.Display(variabile)->Print();
   std::cout << "************************************************************" << std::endl ;
-  std::cout << "plotted observable  = " << variabile << std::endl;
+  std::cout << "    plotted observable  = " << variabile << std::endl;
   std::cout << "************************************************************" << std::endl ;
   auto maximum_histogram_value = std::max(dfQCD.Max(variabile).GetValue(), dfSignal.Max(variabile).GetValue())*(1.5);
   auto minimum_histogram_value = std::min(dfQCD.Min(variabile).GetValue(), dfSignal.Min(variabile).GetValue());
@@ -313,13 +316,17 @@ void DataSetProducer::GetHistogramsSignalQCD(int n_var, bool use_binning){
   auto signalHistBef = dfSignal.Histo1D({"signal bef", "signal bef", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto QCDFilteredHistBef = dfQCDFiltered.Histo1D({"QCDFiltered bef", "QCDFiltered bef", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto QCDHistBef = dfQCD.Histo1D({"QCD bef", "QCD bef", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
-  std::string outDir_path1 = "TauMLTools/Analysis/bin2/outVars/QCDSignalHists/Histo1D_bef/";
-  DataSetProducer::plot1(signalHistBef, variabile,outDir_path1);
-  DataSetProducer::plot1(QCDHistBef, variabile,outDir_path1);
-  DataSetProducer::plot1(QCDFilteredHistBef, variabile,outDir_path1);
+  std::string outDir_path1 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/QCDSignalHists/Histo1D_bef/";
+  DataSetProducer::plot1(signalHistBef, variabile,outDir_path1, "sig");
+  DataSetProducer::plot1(QCDHistBef, variabile,outDir_path1, "QCD");
+  DataSetProducer::plot1(QCDFilteredHistBef, variabile,outDir_path1, "QCDFiltered");
   std::cout << "after rescaling number of bin was " << number_of_bin <<std::endl;
   std::cout << std::endl ;
-  if(use_binning && all_branches_binning.at(variabile).size()>1){
+  bool foundBinningInMap = false;
+  if (all_branches.find(n_var) != all_branches.end()){
+      foundBinningInMap=true;
+  }
+  if(use_binning && foundBinningInMap&& all_branches_binning.at(variabile).size()>1){
     number_of_bin = static_cast<int>(all_branches_binning.at(variabile).at(0));
     minimum_histogram_value = all_branches_binning.at(variabile).at(1);
     maximum_histogram_value = all_branches_binning.at(variabile).at(2);
@@ -327,16 +334,19 @@ void DataSetProducer::GetHistogramsSignalQCD(int n_var, bool use_binning){
     std::cout << "minimum_histogram_value = " << minimum_histogram_value << std::endl;
     std::cout << "maximum_histogram_value = " << maximum_histogram_value << std::endl;
   }
+
+
   auto signalHist = dfSignal.Histo1D({"signal", "signal", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto QCDFilteredHist = dfQCDFiltered.Histo1D({"QCDFiltered", "QCDFiltered", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto QCDHist = dfQCD.Histo1D({"QCD", "QCD", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
-  std::string outDir_path11 = "TauMLTools/Analysis/bin2/outVars/QCDSignalHists/Histo1D/";
-  DataSetProducer::plot1(signalHist, variabile,outDir_path11);
-  DataSetProducer::plot1(QCDHist, variabile,outDir_path11);
-  DataSetProducer::plot1(QCDFilteredHist, variabile,outDir_path11);
-  std::string outDir_path2 = "TauMLTools/Analysis/bin2/outVars/QCDSignalHists/SigVsQCD/";
+  std::string outDir_path11 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/QCDSignalHists/Histo1D/";
+  DataSetProducer::plot1(signalHist, variabile,outDir_path11, "sig");
+  DataSetProducer::plot1(QCDHist, variabile,outDir_path11, "QCD");
+  DataSetProducer::plot1(QCDFilteredHist, variabile,outDir_path11,"QCDFiltered");
+
+  std::string outDir_path2 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/QCDSignalHists/SigVsQCD/";
   DataSetProducer::plot2(signalHist, QCDHist, variabile,outDir_path2);
-  std::string outDir_path3 = "TauMLTools/Analysis/bin2/outVars/QCDSignalHists/SigVsQCDVsQCDFiltered/";
+  std::string outDir_path3 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/QCDSignalHists/SigVsQCDVsQCDFiltered/";
   DataSetProducer::plot3(signalHist, QCDHist,  QCDFilteredHist, variabile,outDir_path3);
 
 }
@@ -344,21 +354,15 @@ void DataSetProducer::GetHistogramsDataValidation(int n_var, bool use_binning){
   ROOT::RDataFrame dfVBF("L2TauTrainTuple", VBFFile);
   ROOT::RDataFrame dfData("L2TauTrainTuple", DataFile);
   ROOT::RDataFrame dfZP("L2TauTrainTuple", ZPFile);
-  int i=1;
-  for (auto &&colName : dfVBF.GetColumnNames()) {
-      all_branches.insert( std::pair<int,std::string>(i, colName));
-      i++;
-  }
-  all_branches_binning = {{"genEventWeight",{50, -0.5,1.5}},{"genLepton_vis_pt",{100, 0, 1000}},{"genLepton_vis_eta",{100, -4.5, 5.5}},{"genLepton_vis_phi",{70, -3.5, 3.5}},{"genLepton_vis_mass",{100, -0.1, 9.9}},{"l1Tau_pt",{50, 0, 250}},{"l1Tau_eta",{100, -4.5, 5.5}},{"l1Tau_phi",{70, -3.5, 3.5}},{"l1Tau_mass",  {100, -0,1, 9.9}},{"caloRecHit_ee_rho",{100, 0, 300}},{"caloRecHit_eb_rho",{100, 0, 300}},{"caloRecHit_ee_eta",{100, -4.5, 5.5}},{"caloRecHit_eb_eta",{100, -4.5, 5.5}},{"caloRecHit_ee_phi",{70, -3.5, 3.5}},{"caloRecHit_eb_phi",{70, -3.5, 3.5}},{"caloRecHit_ee_energy",{60, 0, 6}},{"caloRecHit_eb_energy",{100, 0, 80}},{"caloRecHit_ee_time",{50, -0.5, 9.5}},{"caloRecHit_eb_time",{50, -0.5, 9.5}},{"caloRecHit_ee_chi2",{100, -0.5, 60.5}},{"caloRecHit_eb_chi2",{100, -0.5, 60.5}},{"caloRecHit_ee_energyError",{50, -0.5, 9.5}},{"caloRecHit_eb_energyError",{50, -0.5, 9.5}},{"caloRecHit_ee_timeError",{50, -0.5, 9.5}},{"caloRecHit_eb_timeError",{50, -0.5, 9.5}},{"caloRecHit_hbhe_rho",{100, 0, 300}},{"caloRecHit_hbhe_eta",{100, -4.5, 5.5}},{"caloRecHit_hbhe_phi",{70, -3.5, 3.5}},{"caloRecHit_hbhe_energy",{100, 0, 80}},{"caloRecHit_hbhe_time",{50, -0.5, 9.5}},{"caloRecHit_hbhe_chi2",{100, -0.5, 60.5}},{"caloRecHit_ho_rho",{100, 0, 300}},{"caloRecHit_ho_eta",{100, -4.5, 5.5}},{"caloRecHit_ho_phi",{70, -3.5, 3.5}},{"caloRecHit_ho_energy",{100, 0, 80}},{"caloRecHit_ho_time",{50, -0.5, 9.5}},{"caloRecHit_hf_rho",{100, 0, 300}},{"caloRecHit_hf_eta",{100, -4.5, 5.5}},{"caloRecHit_hf_phi",{70, -3.5, 3.5}},{"caloRecHit_hf_energy",{100, 0, 80}},{"caloRecHit_hf_time",{50, -0.5, 9.5}},{"caloRecHit_hf_timeFalling",{50, -0.5, 9.5}},{"patatrack_pt",{50, -0.5, 20.5}},{"patatrack_eta",{100, -4.5, 5.5}},{"patatrack_phi",{70, -3.5, 3.5}},{"patatrack_chi2",{100, -0.5, 60.5}},{"patatrack_dxy",{60, -0.3, 0.3}},{"patatrack_dz",{300, -15.5, 15.5}},{"patavert_z",{300, -15.5, 15.5}},{"patavert_weight",{100, 0, 2000}},{"patavert_ptv2",{100}},{"patavert_chi2",{100, -0.5, 1000.5}},{"caloRecHit_ee_detId",{1000}},{"caloRecHit_eb_flagsBits",{100}},{"caloRecHit_ee_isRecovered",{100}},{"caloRecHit_eb_isRecovered",{100}},{"caloRecHit_ee_isTimeValid",{100}},{"caloRecHit_eb_isTimeValid",{100}},{"caloRecHit_ee_isTimeErrorValid",{100}},{"caloRecHit_eb_isTimeErrorValid",{100}},{"caloRecHit_hbhe_detId",{100}},{"caloRecHit_hbhe_flags",{100}},{"caloRecHit_ho_detId",{100}},{"caloRecHit_ho_aux",{100}},{"caloRecHit_hf_flags",{100}},{"caloRecHit_hf_auxHF",{100}},{"patatrack_charge",{50, -0.5, 1.5}},{"patatrack_quality",{50, -0.5, 1.5}},{"patatrack_vertex_id",{50, 0, 100}},{"patavert_ndof",{100, 0, 200}},{"run",{10, -0.5,1.5}},{"lumi",{1000}},{"evt",{1000}},{"sampleType",{10, -0.5,1.5}},{"genLepton_index",{60, -0.1, 5,9}},{"genLepton_kind",{100, -0.5, 9.5}},{"genLepton_charge",{10, -0.5, 1.5}},{"caloRecHit_eb_detId",{1000}},{"caloRecHit_ee_flagsBits",{100}},{"caloRecHit_hf_detId",{100}},{"caloRecHit_hf_aux",{100}},{"patatrack_ndof",{10, 0, 10}},{"l1Tau_hwIso",{10, -0.5,1.5}},{"l1Tau_hwQual",{10, -0.5,1.5}},{"l1Tau_towerIEta",{10, -0.5,1.5}},{"l1Tau_towerIPhi",{10, -0.5,1.5}},{"l1Tau_rawEt",{10, -0.5,1.5}},{"l1Tau_isoEt",{10, -0.5,1.5}},{"l1Tau_hasEM",{10, -0.5,1.5}},{"l1Tau_isMerged" ,{10, -0.5,1.5}},{"l1Tau_index",{50, 0, 10}},{"caloRecHit_ho_flags",{100}} };
+  all_branches_binning = {{"genEventWeight",{50, -0.5,1.5}},{"genLepton_vis_pt",{100, 0, 1000}},{"genLepton_vis_eta",{100, -4.5, 5.5}},{"genLepton_vis_phi",{70, -3.5, 3.5}},{"genLepton_vis_mass",{100, -0.1, 9.9}},{"l1Tau_pt",{50, 0, 250}},{"l1Tau_eta",{100, -4.5, 5.5}},{"l1Tau_phi",{70, -3.5, 3.5}},{"l1Tau_mass",  {100, -0,1, 9.9}},{"caloRecHit_ee_rho",{100, 0, 300}},{"caloRecHit_eb_rho",{100, 0, 300}},{"caloRecHit_ee_eta",{100, -4.5, 5.5}},{"caloRecHit_eb_eta",{100, -4.5, 5.5}},{"caloRecHit_ee_phi",{70, -3.5, 3.5}},{"caloRecHit_eb_phi",{70, -3.5, 3.5}},{"caloRecHit_ee_energy",{60, 0, 6}},{"caloRecHit_eb_energy",{100, 0, 80}},{"caloRecHit_ee_time",{50, -0.5, 9.5}},{"caloRecHit_eb_time",{50, -0.5, 9.5}},{"caloRecHit_ee_chi2",{100, -0.5, 60.5}},{"caloRecHit_eb_chi2",{100, -0.5, 60.5}},{"caloRecHit_ee_energyError",{50, -0.5, 9.5}},{"caloRecHit_eb_energyError",{50, -0.5, 9.5}},{"caloRecHit_ee_timeError",{50, -0.5, 9.5}},{"caloRecHit_eb_timeError",{50, -0.5, 9.5}},{"caloRecHit_hbhe_rho",{100, 0, 300}},{"caloRecHit_hbhe_eta",{100, -4.5, 5.5}},{"caloRecHit_hbhe_phi",{70, -3.5, 3.5}},{"caloRecHit_hbhe_energy",{100, 0, 80}},{"caloRecHit_hbhe_time",{50, -0.5, 9.5}},{"caloRecHit_hbhe_chi2",{100, -0.5, 60.5}},{"caloRecHit_ho_rho",{100, 0, 300}},{"caloRecHit_ho_eta",{100, -4.5, 5.5}},{"caloRecHit_ho_phi",{70, -3.5, 3.5}},{"caloRecHit_ho_energy",{100, 0, 80}},{"caloRecHit_ho_time",{50, -0.5, 9.5}},{"caloRecHit_hf_rho",{100, 0, 300}},{"caloRecHit_hf_eta",{100, -4.5, 5.5}},{"caloRecHit_hf_phi",{70, -3.5, 3.5}},{"caloRecHit_hf_energy",{100, 0, 80}},{"caloRecHit_hf_time",{50, -0.5, 9.5}},{"caloRecHit_hf_timeFalling",{50, -0.5, 9.5}},{"patatrack_pt",{50, -0.5, 20.5}},{"patatrack_eta",{100, -4.5, 5.5}},{"patatrack_phi",{70, -3.5, 3.5}},{"patatrack_chi2",{100, -0.5, 60.5}},{"patatrack_dxy",{60, -0.3, 0.3}},{"patatrack_dz",{300, -15.5, 15.5}},{"patavert_z",{300, -15.5, 15.5}},{"patavert_weight",{100, 0, 2000}},{"patavert_ptv2",{100}},{"patavert_chi2",{100, -0.5, 1000.5}},{"caloRecHit_ee_detId",{1000}},{"caloRecHit_eb_flagsBits",{100}},{"caloRecHit_ee_isRecovered",{100}},{"caloRecHit_eb_isRecovered",{100}},{"caloRecHit_ee_isTimeValid",{100}},{"caloRecHit_eb_isTimeValid",{100}},{"caloRecHit_ee_isTimeErrorValid",{100}},{"caloRecHit_eb_isTimeErrorValid",{100}},{"caloRecHit_hbhe_detId",{100}},{"caloRecHit_hbhe_flags",{100}},{"caloRecHit_ho_detId",{100}},{"caloRecHit_ho_aux",{100}},{"caloRecHit_hf_flags",{100}},{"caloRecHit_hf_auxHF",{100}},{"patatrack_charge",{50, -0.5, 1.5}},{"patatrack_quality",{50, -0.5, 1.5}},{"patatrack_vertex_id",{50, 0, 100}},{"patavert_ndof",{100, 0, 200}},{"run",{10, -0.5,1.5}},{"lumi",{1000}}, {"defaultDiTauPath_result",{10}}, {"defaultDiTauPath_lastModuleIndex",{1000}},{"evt",{1000}},{"sampleType",{10, -0.5,1.5}},{"genLepton_index",{60, -0.1, 5,9}},{"genLepton_kind",{100, -0.5, 9.5}},{"genLepton_charge",{10, -0.5, 1.5}},{"caloRecHit_eb_detId",{1000}},{"caloRecHit_ee_flagsBits",{100}},{"caloRecHit_hf_detId",{100}},{"caloRecHit_hf_aux",{100}},{"patatrack_ndof",{10, 0, 10}},{"l1Tau_hwIso",{10, -0.5,1.5}},{"l1Tau_hwQual",{10, -0.5,1.5}},{"l1Tau_towerIEta",{10, -0.5,1.5}},{"l1Tau_towerIPhi",{10, -0.5,1.5}},{"l1Tau_rawEt",{10, -0.5,1.5}},{"l1Tau_isoEt",{10, -0.5,1.5}},{"l1Tau_hasEM",{10, -0.5,1.5}},{"l1Tau_isMerged" ,{10, -0.5,1.5}},{"l1Tau_index",{50, 0, 10}},{"caloRecHit_ho_flags",{100}} };
   bool found = false;
   if (all_branches.find(n_var) != all_branches.end()){
       found=true;
   }
   if(found==false) return;
   std::string variabile = all_branches.at(n_var);
-  dfVBF.Display(variabile)->Print();
   std::cout << "************************************************************" << std::endl ;
-  std::cout << "plotted observable  = " << variabile << std::endl;
+  std::cout << "     plotted observable  = " << variabile << std::endl;
   std::cout << "************************************************************" << std::endl ;
   auto maximum_histogram_value = std::max(dfZP.Max(variabile).GetValue(), dfVBF.Max(variabile).GetValue())*(1.5);
   auto minimum_histogram_value = std::min(dfZP.Min(variabile).GetValue(), dfVBF.Min(variabile).GetValue());
@@ -400,8 +404,10 @@ void DataSetProducer::GetHistogramsDataValidation(int n_var, bool use_binning){
   auto VBFHist = dfVBF.Histo1D({"VBF", "VBF", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto ZPHist = dfZP.Histo1D({"ZPrime", "ZPrime", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
   auto DataHist = dfData.Histo1D({"Data", "Data", static_cast<int>(number_of_bin), minimum_histogram_value, maximum_histogram_value}, variabile);
-  std::string outDir_path1 = "TauMLTools/Analysis/bin2/outVars/VBFZPDataHists/VBFZPDataHists1D/";
-  DataSetProducer::plot1(DataHist, variabile,outDir_path1);
-  std::string outDir_path2 = "TauMLTools/Analysis/bin2/outVars/VBFZPDataHists/VBFZPDataHists2D/";
+  std::string outDir_path1 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/VBFZPDataHists/VBFZPDataHists1D/";
+  DataSetProducer::plot1(DataHist, variabile,outDir_path1, "data");
+  DataSetProducer::plot1(VBFHist, variabile,outDir_path1, "VBF");
+  DataSetProducer::plot1(ZPHist, variabile,outDir_path1, "ZP");
+  std::string outDir_path2 = "/Users/valeriadamante/Desktop/Dottorato/plots/outVars/VBFZPDataHists/VBFZPDataHists2D/";
   DataSetProducer::plot2(VBFHist, ZPHist, variabile,outDir_path2);
 }

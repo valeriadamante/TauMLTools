@@ -17,18 +17,16 @@ options.register('eventList', '', VarParsing.multiplicity.singleton, VarParsing.
                  "List of events to process.")
 options.register('graphPath', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/graph_model/graph_saved_model.pb', VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  "Path of the graph to use")
-options.register('inputTensorName', 'input', VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "give input Tensor Name.")
-options.register('outputTensorName', 'output', VarParsing.multiplicity.singleton, VarParsing.varType.string,
+options.register('normalizationDict', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/TauMLTools/Analysis/config/NormalizationDict.json', VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  "give output Tensor Name.")
-options.register('normalizationDict', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/TauMLTools/Training/python/NormalizationDict.json', VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "give output Tensor Name.")
+options.register('rateWP', 4, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Rate on which set discriminator threshold")
 options.register('dumpPython', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
                  "Dump full config into stdout.")
 
 options.parseArguments()
 dataDict = {"Run3MC" : False, "Run2Data" : True}
-isData = dataDict[options.sampleType] 
+isData = dataDict[options.sampleType]
 processName = 'MLProva'
 process = cms.Process(processName, Run3)
 
@@ -147,7 +145,9 @@ else:
     process = customizeHLTforMC(process)
 
 from TauMLTools.Production.ApplyCNNL2 import update
-process = update(process,options.graphPath, options.inputTensorName, options.outputTensorName,options.normalizationDict)
+
+rate=("opt_threshold_{}").format(options.rateWP)
+process = update(process,options.graphPath,options.normalizationDict, rate)
 
 # End of customisation functions
 

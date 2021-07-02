@@ -4,7 +4,7 @@
 
 void FilterQCD(){
   DataSetProducer dataset;
-  dataset.SetAbsolutePath("/home/users/damante/L2SkimmedTuples/");
+  dataset.SetAbsolutePath("/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/");
 
   /* Signal file */
   std::vector<std::string> SignalFiles = {dataset.GetAbsolutePath()+"DataSetTraining/all_TT.root",dataset.GetAbsolutePath()+"DataSetTraining/all_DY.root",dataset.GetAbsolutePath()+"DataSetTraining/all_WJetsToLNu.root"};

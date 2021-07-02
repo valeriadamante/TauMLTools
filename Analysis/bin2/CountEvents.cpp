@@ -2,7 +2,7 @@
 #include "DataSetProducer.C"
 
 
-void CheckHistograms(){
+void CountEvents(){
   DataSetProducer dataset;
   dataset.SetAbsolutePath("/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/");
   // Signal files
@@ -22,14 +22,6 @@ void CheckHistograms(){
   // ZP files
   std::vector<std::string> ZPFile = {dataset.GetAbsolutePath()+"DataSetTraining/all_ZPrime.root"};
   dataset.SetZPFile(ZPFile);
-  auto colNames = ROOT::RDataFrame("L2TauTrainTuple", QCDFile).GetColumnNames();
-  int i =0;
-  for (auto &&colName : colNames){
-    std::cout << "Getting histogram for  " << colName << std::endl;
-    dataset.InsertBranch(i, colName);
-    dataset.GetHistogramsSignalQCD(i, true);
-    dataset.GetHistogramsDataValidation(i, true);
-    i++;
-  }
+  dataset.CountEventInSignalAndBackground();
 
 }
