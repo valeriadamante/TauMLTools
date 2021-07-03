@@ -46,7 +46,7 @@ public:
     const int filling_QCD = 107 ;
 
     DataSetProducer(const Arguments& _args) :
-        args(_args), WJetFile(root_ext::OpenRootFile(absolute_path+"all_WJetsToLNu.root")), TTFile(root_ext::OpenRootFile(absolute_path+"all_TT.root")), /*ZPrimeFile(root_ext::OpenRootFile(absolute_path+"all_ZPrime.root")),*/ DYFile(root_ext::OpenRootFile(absolute_path+"all_DY.root")), QCDFile(root_ext::OpenRootFile(absolute_path+"QCDFiltered.root")),outputFile(root_ext::CreateRootFile(args.output(), ROOT::kLZ4, 4)), WJTuple(WJetFile.get(), true), TTTuple( TTFile.get(), true), /*ZPrimeTuple( ZPrimeFile.get(), true),*/ DYTuple( DYFile.get(), true), QCDTuple( QCDFile.get(), true), outputTuple(outputFile.get(), false)
+        args(_args), WJetFile(root_ext::OpenRootFile(absolute_path+"all_WJetsToLNu.root")), TTFile(root_ext::OpenRootFile(absolute_path+"all_TT.root")), /*ZPrimeFile(root_ext::OpenRootFile(absolute_path+"all_ZPrime.root")),*/ DYFile(root_ext::OpenRootFile(absolute_path+"all_DY.root")), QCDFile(root_ext::OpenRootFile(absolute_path+"QCDFiltered.root")),outputFile(root_ext::CreateRootFile(absolute_path+args.output(), ROOT::kLZ4, 4)), WJTuple(WJetFile.get(), true), TTTuple( TTFile.get(), true), /*ZPrimeTuple( ZPrimeFile.get(), true),*/ DYTuple( DYFile.get(), true), QCDTuple( QCDFile.get(), true), outputTuple(outputFile.get(), false)
     {
 
         if(args.n_threads() > 1)

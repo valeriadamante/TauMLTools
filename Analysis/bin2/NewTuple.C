@@ -156,7 +156,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   //SignalHist.SetFillColorAlpha(kBlue, 0.35);
   SignalHist.SetLineColor(kBlue);
   SignalHist.Draw("HIST");
-  c1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/SignalHist.pdf");
+  c1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/SignalHist.pdf");
 
   // 2. qcd histogam
   TCanvas c2("c2", "c2", 10000,10000);
@@ -167,7 +167,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   //QCDHist.SetFillColorAlpha(kBlue, 0.35);
   QCDHist.SetLineColor(kBlue);
   QCDHist.Draw("HIST");
-  c2.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/QCDHist.pdf");
+  c2.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/QCDHist.pdf");
   // 3. data histogram
   TCanvas c3("c3", "c3", 10000,10000);
   DataHist.GetXaxis()->SetTitle(("L1 #tau p_{T}"));
@@ -177,7 +177,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   //DataHist.SetFillColorAlpha(kRed, 0.35);
   DataHist.SetLineColor(kRed);
   DataHist.Draw("HIST");
-  c3.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/DataHist.pdf");
+  c3.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/DataHist.pdf");
   /* draw superimposed data/qcd hists before reweighting*/
   TCanvas c3_1("c3_1", "c3_1", 10000,10000);
   TLegend *legend = new TLegend(0.74812, 0.820741, 0.901, 0.902 );
@@ -194,7 +194,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
     DataHist.Draw("HIST SAME");
   }
   legend->Draw("SAME");
-  c3_1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/QCDDataHistBefore.pdf");
+  c3_1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/QCDDataHistBefore.pdf");
 
   /* define lambda function to get weights from histograms */
   auto GetWeightFromHistos = [&](float &L1Pt, float& genLepton_vis_pt, bool &genLepton_isTau){
@@ -247,7 +247,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   //hWeightedSignalHist.SetFillColorAlpha(kBlue, 0.35);
   hWeightedSignalHist.SetLineColor(kBlue);
   hWeightedSignalHist.Draw("EHIST");
-  c4.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedSignalHist.pdf");
+  c4.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedSignalHist.pdf");
 
   // 2. background
   TCanvas c5("c5", "c5", 10000,10000);
@@ -258,7 +258,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   hWeightedQCDHist.Scale(1/hWeightedQCDHist.GetEntries());
   hWeightedQCDHist.SetLineColor(kBlue);
   hWeightedQCDHist.Draw("HIST");
-  c5.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedQCDHist.pdf");
+  c5.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedQCDHist.pdf");
 
   //3. data
   TCanvas c6("c6", "c6", 10000,10000);
@@ -277,7 +277,7 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
     DataHist.Draw("HIST SAME");
   }
   legend2->Draw("SAME");
-  c6.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedBckgHist.pdf");
+  c6.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedBckgHist.pdf");
 
 
 }
@@ -354,7 +354,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   SignalHist.SetLineColor(kBlue);
   SignalHist.Draw("HIST");
   c1.SetLogx();
-  c1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/SignalHist.pdf");
+  c1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/SignalHist.pdf");
   TCanvas c2("c2", "c2", 10000,10000);
   QCDHist.GetXaxis()->SetTitle(("L1 #tau p_{T} (GeV)"));
   QCDHist.GetYaxis()->SetTitle("A.U.");
@@ -363,7 +363,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   //QCDHist.SetFillColorAlpha(kBlue, 0.35);
   QCDHist.SetLineColor(kBlue);
   QCDHist.Draw("HIST");
-  c2.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/QCDHist.pdf");
+  c2.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/QCDHist.pdf");
   TCanvas c3("c3", "c3", 10000,10000);
   DataHist.GetXaxis()->SetTitle(("L1 #tau p_{T} (GeV)"));
   DataHist.GetYaxis()->SetTitle("A.U.");
@@ -372,7 +372,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   //DataHist.SetFillColorAlpha(kRed, 0.35);
   DataHist.SetLineColor(kRed);
   DataHist.Draw("HIST");
-  c3.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/DataHist.pdf");
+  c3.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/DataHist.pdf");
   TCanvas c3_1("c3_1", "c3_1", 10000,10000);
   TLegend *legend = new TLegend(0.74812, 0.820741, 0.901, 0.902 );
   QCDHist.SetStats(0);
@@ -388,7 +388,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
     DataHist.Draw("HIST SAME");
   }
   legend->Draw("SAME");
-  c3_1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/QCDDataHistBefore.pdf");
+  c3_1.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/QCDDataHistBefore.pdf");
 
   /* draw histograms after reweighting*/
   auto WeightedSignalHist = dfDataSetWeight.Filter("genLepton_isTau==true").Histo1D({"","",binnum, SignalBins}, "genLepton_vis_pt", "weight");
@@ -406,7 +406,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   //hWeightedSignalHist.SetFillColorAlpha(kBlue, 0.35);
   hWeightedSignalHist.SetLineColor(kBlue);
   hWeightedSignalHist.Draw("EHIST");
-  c4.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedSignalHist.pdf");
+  c4.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedSignalHist.pdf");
   TCanvas c5("c5", "c5", 10000,10000);
   hWeightedQCDHist.GetXaxis()->SetTitle(("L1 #tau p_{T} (GeV)"));
   hWeightedQCDHist.GetYaxis()->SetTitle("A.U.");
@@ -416,7 +416,7 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   //hWeightedQCDHist.SetFillColorAlpha(kBlue, 0.35);
   hWeightedQCDHist.SetLineColor(kBlue);
   hWeightedQCDHist.Draw("HIST");
-  c5.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedQCDHist.pdf");
+  c5.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedQCDHist.pdf");
   TCanvas c6("c6", "c6", 10000,10000);
   TLegend *legend2 = new TLegend(0.74812, 0.820741, 0.901003, 0.902222 );
   DataHist.GetYaxis()->SetTitleOffset(1.2);
@@ -435,5 +435,5 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
     DataHist.Draw("HIST SAME");
   }
   legend2->Draw("SAME");
-  c6.SaveAs("/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/plots/Reweighing/WeightedBckgHist.pdf");
+  c6.SaveAs("/Users/valeriadamante/Desktop/Dottorato/plots/Reweighing/WeightedBckgHist.pdf");
 }

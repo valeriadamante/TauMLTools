@@ -36,50 +36,50 @@ void MergeFiles(){
   //dataset.ProduceDataSample(dataset.GetQCDFile(), "QCD");
   //std::cout << "QCD Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics1File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root"};
-  //dataset.SetEph1File(EphemeralHLTPhysics1File);
-  //dataset.ProduceDataSample(dataset.GetEph1File(), "Eph1");
-  //std::cout << "Eph1 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics1File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root"};
+  dataset.SetEph1File(EphemeralHLTPhysics1File);
+  dataset.ProduceDataSample(dataset.GetEph1File(), "Eph1");
+  std::cout << "Eph1 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics2File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics2/*.root"};
-  //dataset.SetEph2File(EphemeralHLTPhysics2File);
-  //dataset.ProduceDataSample(dataset.GetEph2File(), "Eph2");
-  //std::cout << "Eph2 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics2File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics2/*.root"};
+  dataset.SetEph2File(EphemeralHLTPhysics2File);
+  dataset.ProduceDataSample(dataset.GetEph2File(), "Eph2");
+  std::cout << "Eph2 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics3File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics3/*.root"};
-  //dataset.SetEph3File(EphemeralHLTPhysics3File);
-  //dataset.ProduceDataSample(dataset.GetEph3File(), "Eph3");
-  //std::cout << "Eph3 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics3File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics3/*.root"};
+  dataset.SetEph3File(EphemeralHLTPhysics3File);
+  dataset.ProduceDataSample(dataset.GetEph3File(), "Eph3");
+  std::cout << "Eph3 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics4File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics4/*.root"};
-  //dataset.SetEph4File(EphemeralHLTPhysics4File);
-  //dataset.ProduceDataSample(dataset.GetEph4File(), "Eph4");
-  //std::cout << "Eph4 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics4File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics4/*.root"};
+  dataset.SetEph4File(EphemeralHLTPhysics4File);
+  dataset.ProduceDataSample(dataset.GetEph4File(), "Eph4");
+  std::cout << "Eph4 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics5File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics5/*.root"};
-  //dataset.SetEph5File(EphemeralHLTPhysics5File);
-  //dataset.ProduceDataSample(dataset.GetEph5File(), "Eph5");
-  //std::cout << "Eph5 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics5File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics5/*.root"};
+  dataset.SetEph5File(EphemeralHLTPhysics5File);
+  dataset.ProduceDataSample(dataset.GetEph5File(), "Eph5");
+  std::cout << "Eph5 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics6File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics6/*.root"};
-  //dataset.SetEph6File(EphemeralHLTPhysics6File);
-  //dataset.ProduceDataSample(dataset.GetEph6File(), "Eph6");
-  //std::cout << "Eph6 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics6File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics6/*.root"};
+  dataset.SetEph6File(EphemeralHLTPhysics6File);
+  dataset.ProduceDataSample(dataset.GetEph6File(), "Eph6");
+  std::cout << "Eph6 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics7File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics7/*.root"};
-  //dataset.SetEph7File(EphemeralHLTPhysics7File);
-  //dataset.ProduceDataSample(dataset.GetEph7File(), "Eph7");
-  //std::cout << "Eph7 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics7File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics7/*.root"};
+  dataset.SetEph7File(EphemeralHLTPhysics7File);
+  dataset.ProduceDataSample(dataset.GetEph7File(), "Eph7");
+  std::cout << "Eph7 Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics8File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics8/*.root"};
-  //dataset.SetEph8File(EphemeralHLTPhysics8File);
-  //dataset.ProduceDataSample(dataset.GetEph8File(), "Eph8");
-  //std::cout << "Eph8 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics8File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics8/*.root"};
+  dataset.SetEph8File(EphemeralHLTPhysics8File);
+  dataset.ProduceDataSample(dataset.GetEph8File(), "Eph8");
+  std::cout << "Eph8 Finito " << std::endl;
 
-  //std::vector<std::string> DataFile = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics2/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics3/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics4/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics5/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics6/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics7/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics8/*.root"};
-  //dataset.SetDataFile(DataFile);
-  //dataset.ProduceDataSample(dataset.GetDataFile(), "Data");
-  //std::cout << "Data Finito " << std::endl;
+  std::vector<std::string> DataFile = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics2/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics3/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics4/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics5/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics6/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics7/*.root",dataset.GetAbsolutePath()+"EphemeralHLTPhysics8/*.root"};
+  dataset.SetDataFile(DataFile);
+  dataset.ProduceDataSample(dataset.GetDataFile(), "Data");
+  std::cout << "Data Finito " << std::endl;
 
 
 
