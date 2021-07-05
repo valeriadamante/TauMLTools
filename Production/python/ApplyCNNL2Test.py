@@ -14,9 +14,9 @@ def update(process, graphPath, normalizationDict, rateWP):
     process.l2TauNNTag.graphPath = cms.string(graphPath)
     process.l2TauNNTag.normalizationDict = cms.string(normalizationDict)
     thWp = {
-        'opt_threshold_3': 0.16547765582618013,
-        'opt_threshold_4': 0.11188014969047799,
-        'opt_threshold_5': 0.07665744051155343,
+        'opt_threshold_3': 0.1808643564563681,
+        'opt_threshold_4': 0.1226862631719996,
+        'opt_threshold_5': 0.08411392196831002,
     }
     process.l2TauNNTag.discr_threshold = cms.double(thWp[rateWP])
     #process.MLPathTest = cms.Path(process.HLTBeginSequence + process.hltL1sDoubleTauBigOR , process.HLTDoLocalPixelTask, process.HLTRecoPixelTracksTask, process.HLTRecopixelvertexingTask)
