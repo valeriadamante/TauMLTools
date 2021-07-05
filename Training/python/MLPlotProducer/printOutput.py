@@ -1,4 +1,5 @@
 from  TauMLTools.Training.python.produceGridDatasets import *
+#from  produceGridDatasets import *
 import tensorflow as tf
 import root_pandas
 import pandas as pd
@@ -54,9 +55,10 @@ params = {
     'patience_es':10,
     'epochs':100000,
     'bigOrRate': 13603.37,
-    'opt_threshold_3':0.1277466341834952,
-    'opt_threshold_4': 0.08153110369858041,
-    'opt_threshold_5': 0.051069704813926364,
+
+    'opt_threshold_3': 0.1808643564563681,
+    'opt_threshold_4': 0.1226862631719996,
+    'opt_threshold_5': 0.08411392196831002,
 }
 # ***** Get cell grid Matrix *****
 varDict = {
@@ -93,6 +95,10 @@ varDict = {
     30:"PatatrackDz",
     }
 
+
+
+# ***** Get cell grid Matrix *****
+
 kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : False, 'verbose' : args.verbose}
 CellGridMatrix = GetCellGridNormMatrix(args.machine, args.effRate, **kwArgs)
 # ***** Get MC and weights Matrices *****
@@ -103,38 +109,18 @@ if(args.effRate== 'test'):
         print("preparing train/test/val samples")
     number_of_batches = len(MCTruth)/params['batch_size']
     x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrainTestFraction(MCTruth, CellGridMatrix, weights, params['train_fraction'],  params['validation_fraction'], args.verbose)
-#print(CellGridMatrix.shape)
+print(CellGridMatrix.shape)
 
-#for i in range(len(CellGridMatrix)):
-#    if(CellGridMatrix[i][0][0][1]==35.5/256.0):
-#        print(i)
-#        print(CellGridMatrix[i][0][0][1])
-        #for j in range(len(CellGridMatrix[i][0][0])):
-            #print(("var = {}").format(varDict[j]))
-            #print(CellGridMatrix[i][0][0][:])
-i = 26201
-#print(CellGridMatrix[i][0][0][1]*256.)
-'''
-for phi_idx in range(len(CellGridMatrix[i])):
-    for eta_idx in range(len(CellGridMatrix[i][phi_idx])):
-        for j in range(len(CellGridMatrix[i][phi_idx][eta_idx])):
-            long_value = CellGridMatrix[i][phi_idx][eta_idx][j]
-            CellGridMatrix[i][phi_idx][eta_idx][j] = round(long_value,6)
-            print(("var name = {} \t tau_idx = {} \t eta_idx = {} \t phi_idx = {} \tvalue = {}").format(varDict[j], i, eta_idx, phi_idx,CellGridMatrix[i][phi_idx][eta_idx][j]))
-            #print(("{}, ").format(CellGridMatrix[i][phi_idx][eta_idx][j]))
-
-'''
-#print(CellGridMatrix)
 # ****** Get DataFrames ******
 #y_predict_test = model.predict(x_test).reshape(y_test.shape)
-variables = ['evt','run','lumi','l1Tau_pt', 'l1Tau_hwIso']
+variables = ['evt','lumi', 'run','l1Tau_pt', 'l1Tau_hwIso', 'defaultDiTauPath_lastModuleIndex']
 if(args.effRate != 'rate'):
-    variables = ['evt','run','lumi','l1Tau_pt', 'l1Tau_hwIso', 'genLepton_vis_pt','genLepton_vis_eta','genLepton_isTau']
+    variables = ['evt','lumi', 'run','l1Tau_pt', 'l1Tau_hwIso', 'genLepton_vis_pt','genLepton_vis_eta','genLepton_isTau','defaultDiTauPath_lastModuleIndex',  ]
 inFile = GetRootPath(args.machine, args.effRate)
 treeName = 'L2TauTrainTuple'
 
 absolute_path=GetDataSetPath(args.machine)
-dataFrameWithPredName = ("{}/dfWithPredictions_{}_3.root").format(absolute_path,GetNameForEffRate(args.effRate))
+dataFrameWithPredName = ("{}/dfWithPredictions_AndLumi_{}1.root").format(absolute_path,GetNameForEffRate(args.effRate))
 
 # ***** save dataframe with predictions *****
 if(not os.path.exists(dataFrameWithPredName)):
@@ -142,10 +128,23 @@ if(not os.path.exists(dataFrameWithPredName)):
     model = tf.keras.models.load_model(GetModelPath(args.machine, params))
     print("model successfully loaded")
     df = root_pandas.read_root(inFile, treeName, variables)
-    df = df[(df.l1Tau_pt>=32) & ((df.l1Tau_hwIso>0) | (df.l1Tau_pt>=70))]
     df['y_predict'] = model.predict(CellGridMatrix).reshape(df['evt'].shape)
     root_pandas.to_root(df, dataFrameWithPredName, treeName)
 
 df = root_pandas.read_root(dataFrameWithPredName,treeName)
+#print(df.head())
 
-print(df[(df.lumi == 136)].head(10))
+
+'''
+i = 86552
+for phi_idx in range(len(CellGridMatrix[i])):
+    for eta_idx in range(len(CellGridMatrix[i][phi_idx])):
+        for j in range(len(CellGridMatrix[i][phi_idx][eta_idx])):
+            long_value = CellGridMatrix[i][phi_idx][eta_idx][j]
+            CellGridMatrix[i][phi_idx][eta_idx][j] = round(long_value,6)
+            #print(("var name = {} \t tau_idx = {} \t eta_idx = {} \t phi_idx = {} \tvalue = {}").format(varDict[j], i, eta_idx, phi_idx,CellGridMatrix[i][phi_idx][eta_idx][j]))
+            print(("{}, ").format(CellGridMatrix[i][phi_idx][eta_idx][j]))
+'''
+
+df = df[(df.defaultDiTauPath_lastModuleIndex>5) & (df.l1Tau_pt>=32) & ((df.l1Tau_hwIso>0) | (df.l1Tau_pt>=70))]
+print(df[(df.lumi == 136)].head(50))

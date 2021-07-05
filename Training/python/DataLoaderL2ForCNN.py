@@ -8,10 +8,10 @@ from  TauMLTools.Training.python.CellGridProducer import *
 import json
 from tensorflow import keras
 
-def GetAwkArray(filePath, treeName):
+def GetAwkArray(filePath, treeName, entryStop=None):
     file = uproot.open(filePath)
     tree = file[treeName]
-    entryStop = 200*3769
+    #entryStop = 200*12151
     return tree.arrays(entry_stop = entryStop, how="zip")
 
 def GetAwkArrayData(filePath, treeName):
@@ -28,7 +28,11 @@ def GetMCTruth(awkArray, truthVar):
 def getNormCellGridMatrix( n_cellsX, n_cellsY, inFile, treeName, outFile, outFileNorm, dictFileToSave, dictFileToRead, distribFile, timeInfo, n_max_events, verbose, isTrainingDataSet, plot=True):
     start_0 = time.time()
     nVars = len(NNInputs)
+    if(verbose>0):
+        print(("starting get norm cell grid matrix with verbose = {}").format(verbose))
     if(not os.path.exists(outFile) and not os.path.exists(outFileNorm)):
+        if(verbose>0):
+            print("nessuno dei due file esiste, produco prima cell grid matrix e poi normalizzo")
         tree = uproot.open(inFile)[treeName]
         start_1 = time.time()
         if(timeInfo):
@@ -36,13 +40,21 @@ def getNormCellGridMatrix( n_cellsX, n_cellsY, inFile, treeName, outFile, outFil
         if(n_max_events!=-1):
             awkArray =tree.arrays(entry_stop=n_max_events)
         else:
-            awkArray =tree.arrays()
+            if(isTrainingDataSet):
+                nTrain = 200*12151
+                awkArray =tree.arrays(entry_stop=nTrain)
+            else:
+                awkArray =tree.arrays()
         start_2 = time.time()
         if(timeInfo):
             print (("time to get awkarray {}").format(start_2-start_1))
+        if(verbose>0):
+            print(("len awkArray = {} \nNow producing cell grid matrix").format(len(awkArray)))
         CellGrid = getCellGridMatrix(nVars, n_cellsX, n_cellsY, awkArray.nVertices,
                                 awkArray.l1Tau_pt, awkArray.l1Tau_eta, awkArray.l1Tau_hwIso, awkArray.caloRecHit_e_energy, awkArray.caloRecHit_e_DeltaEta, awkArray.caloRecHit_e_DeltaPhi, awkArray.caloRecHit_e_chi2, awkArray.caloRecHit_had_energy, awkArray.caloRecHit_had_DeltaEta, awkArray.caloRecHit_had_DeltaPhi, awkArray.caloRecHit_had_chi2, awkArray.patatrack_pt, awkArray.patatrack_DeltaEta, awkArray.patatrack_DeltaPhi, awkArray.patatrack_chi2, awkArray.patatrack_ndof, awkArray.patatrack_charge, awkArray.patatrack_dxy, awkArray.patatrack_dz, awkArray.patatrack_hasVertex, awkArray.patatrack_vert_z, awkArray.patatrack_vert_ptv2, awkArray.patatrack_vert_chi2, awkArray.patatrack_vert_ndof)
         np.save(outFile,CellGrid)
+        if(verbose>0):
+            print("end of cell grid matrix production")
         if(verbose>0):
             print(("cellGrid shape = {}").format(CellGrid.shape))
         start_3 = time.time()
@@ -57,19 +69,26 @@ def getNormCellGridMatrix( n_cellsX, n_cellsY, inFile, treeName, outFile, outFil
             json.dump(dict, fp)
         np.save(outFileNorm, CellGrid)
     elif(os.path.exists(outFile) and not os.path.exists(outFileNorm)):
-        CellGrid = np.load(outFile)
+        CellGrid = np.load(outFile, mmap_mode='r+')
         start_1 = time.time()
+        if(verbose>0):
+            print("cell grid matrix file exists, need to normalize it")
         if(timeInfo):
             print (("time to get file {}").format(start_1-start_0))
         if(verbose>0):
             print(("cellGrid shape = {}").format(CellGrid.shape))
         dict={}
         if(isTrainingDataSet):
-            StandardizeVars(CellGrid, dict, verbose, timeInfo)
+            if(verbose>0):
+                print("is training dataset, standardizing vars for it ")
+                print(("options are: dict = {}, distribFile = {}, verbose = {}, timeInfo = {} , plot = {}").format(dict, distribFile, verbose, timeInfo, plot))
+            StandardizeVars(CellGrid, dict, distribFile, verbose, timeInfo, plot)
         else:
-            StandardizeVarsForDifferentDataSet(CellGrid, dict, distribFile, dictFileToRead, verbose=0, timeInfo=True, plot = True)
+            StandardizeVarsForDifferentDataSet(CellGrid, dict, distribFile, dictFileToRead, verbose, timeInfo, plot)
         with open(dictFileToSave, 'w') as fp:
             json.dump(dict, fp)
+        if(verbose>0):
+            print("saving normalized cell grid matrix")
         np.save(outFileNorm, CellGrid)
     elif(os.path.exists(outFile) and os.path.exists(outFileNorm)):
         if(verbose)>0:

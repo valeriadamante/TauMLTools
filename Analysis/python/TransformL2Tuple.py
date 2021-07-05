@@ -46,7 +46,8 @@ args = parser.parse_args()
 
 cmd_in = 'L2TrainingTupleProducer '
 inputs =[]
-directory = "/home/users/damante/L2SkimmedTuples/"
+#directory = "/home/users/damante/L2SkimmedTuples/"
+directory = "/gpfs/ddn/cms/user/damante/L2SkimmedTuples/"
 def search_files(inputs):
     for k in files_directories:
         if(args.sample in k):
@@ -69,7 +70,7 @@ search_files(inputs)
 print directory
 #"isQCDDataVBF", "0 = QCD; 1 = TT,DY,ZPrime; 2 = VBF; 3=Data"
 
-isQCD_dict = {'DY':'1',
+isQCD_dict = {'DY':'DY',
                 'QCD_Pt-15to3000':'QCD',
                 'QCD_Pt-15to7000':'QCD',
                 'QCD_Pt_170to300':'QCD',
@@ -83,7 +84,7 @@ isQCD_dict = {'DY':'1',
                 'TT':'TT',
                 'VBF':'VBF',
                 'WJets':'WJets',
-                'Zprime':'ZP',
+                'Zprime':'ZPrime',
                 'EphemeralHLTPhysics1':'Data',
                 'EphemeralHLTPhysics2':'Data',
                 'EphemeralHLTPhysics3':'Data',

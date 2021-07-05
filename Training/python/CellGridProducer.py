@@ -64,9 +64,10 @@ class NNInputs (enum.IntEnum):
 
 
 
-
 def StandardizeSingleVar(CellGrid, varPos, varName, dict, min=None, max=None, mean=None, std=None, mask=np.array(None), **kwargs):
     start= time.time()
+    if(kwargs['verbose']>0):
+        print(("starting standardizing {}").format(varName))
     outDir = kwargs['outDir']
     if not os.path.exists(outDir) :
         os.mkdir(outDir)
@@ -164,10 +165,11 @@ def StandardizeSingleVar(CellGrid, varPos, varName, dict, min=None, max=None, me
     if(kwargs["time"]==True):
         print(("time to fill {} = {} ").format(varName, final_time))
     plt.close('all')
-    print(("end of {}").format(varName))
+    print(("end of standardizing {}").format(varName))
 
 
 def StandardizeVars(CellGrid, dict, distribFile, verbose=0, timeInfo=True, plot = True):
+    print(("verbose == {}").format(verbose))
     kwArgs = {'outDir': distribFile,  'logX':False, 'logY':False, 'nBins':50, 'verbose':verbose, 'time':timeInfo, 'plot':plot}
     # nVertices
     mean = int(round(CellGrid[:,:,:,np.intp(NNInputs.nVertices)].mean(),0))
@@ -348,6 +350,8 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
 
         # 3. filling Hcal
         nHcal = len(caloRecHit_had_energy[tau])
+        #if tau==86552:
+        #    print(nHcal)
         for item in range(nHcal):
           deta = caloRecHit_had_DeltaEta[tau][item]
           dphi = caloRecHit_had_DeltaPhi[tau][item]
@@ -362,6 +366,11 @@ def getCellGridMatrix(nVars, n_cellsX, n_cellsY, nVertices,
               CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalChi2)]+=  caloRecHit_had_chi2[tau][item]*caloRecHit_had_energy[tau][item]
               CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergySumForPositiveChi2)]+=  caloRecHit_had_energy[tau][item]
               CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalSizeForPositiveChi2)]+= 1
+#          if(tau==86552):
+              #print(caloRecHit_had_energy[tau][item])
+          #if tau==86552 and (phi_idx ==0 and eta_idx==3):
+              #print("item = ", item)
+              #print("deta = ", deta, "\t dphi = ", dphi, "\t energy = ", caloRecHit_had_energy[tau][item], "\t en sum = ", CellGrid[tau,phi_idx,eta_idx,np.intp(NNInputs.HcalEnergySum)])
         # 3.1 calculate energy std dev
         CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] = np.where( CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]>1 , ( CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergyStdDev)] - ((CellGrid[tau,:,:,np.intp(NNInputs.HcalEnergySum)])**2/CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]) ) /(CellGrid[tau,:,:,np.intp(NNInputs.HcalSize)]-1) , 0)
 

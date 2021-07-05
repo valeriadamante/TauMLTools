@@ -1,17 +1,24 @@
 # produce datasets so that I never have to reload them
 from TauMLTools.Training.python.DataLoaderL2ForCNN import *
 #from DataLoaderL2ForCNN import *
+import os
 import numpy as np
 # ****** Define directories *******
 dir_dict = {} # add also pccms65
 dir_dict["cmssimphase2"]={}
-dir_dict["cmssimphase2"]["data"]="/data/tau-l2/DataSetTraining/"
+#dir_dict["cmssimphase2"]["data"]="/data/tau-l2/DataSetTraining/"
+dir_dict["cmssimphase2"]["data"]="/home/valeria/"
 dir_dict["cmssimphase2"]["model"]="/home/valeria/model/"
 dir_dict["cmssimphase2"]["output"]="/home/valeria/output/"
 dir_dict["local"]={}
 dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
 dir_dict["local"]["model"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/model/"
-dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
+dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/"
+dir_dict["gridui"]={}
+dir_dict["gridui"]["data"]="/gpfs/ddn/cms/user/damante//L2SkimmedTuples/DataSetTraining/"
+
+
+#dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
 effRate_dict ={"eff":"VBF", "rate":"data", "test":"DataSetTraining","Zprime":"Zprime"}
 def GetDataSetPath(machine):
     return dir_dict[machine]["data"]
@@ -55,7 +62,7 @@ def GetCellGridNormMatrix(machine, effRate, **kwargs):
             outFileNorm_name=('CellGridNormVBF_{}Evts.npy').format(n_max_events)
         isTrainingDataSet = False
     if(effRate=='Zprime'):
-        inFile_name = 'miniTuple_Zprime.root'
+        inFile_name = 'miniTuple_ZP.root'
         outFile_name =  'CellGridZprime.npy'
         outFileNorm_name='CellGridZprimeNorm.npy'
         dictName = 'NormalizationDictZprime.json'
@@ -95,26 +102,29 @@ def GetMCTruthWeights(machine, McTruth_file,Weights_file, **kwargs):
     # ***** Load MCTruth Matrix *******
     if(verbose)>0:
         print("Loading MCTruthFile")
+        print(inFile)
     if not os.path.exists(MCTruthFile):
-        awkArray = GetAwkArray(inFile, treeName)
+        awkArray = GetAwkArray(inFile, treeName,  200*12151)
+        print(("awk array shape = {}").format(len(awkArray)))
         MCTruth = GetMCTruth(awkArray, 'genLepton_isTau')
         np.save(MCTruthFile, MCTruth)
     else:
         if(verbose)>0:
             print(("file {} exists and taking data from there").format(MCTruthFile))
-        MCTruth = np.load(MCTruthFile)
+        MCTruth = np.load(MCTruthFile, mmap_mode='r+')
+        print(("len MCTruth = {}").format(MCTruth.shape))
     # ****** Load Weights matrix *******
     if not os.path.exists(WeightsFile):
         if(verbose)>0:
             print("Loading WeightsFile")
-        awkArray = GetAwkArray(inFile, treeName)
+        awkArray = GetAwkArray(inFile, treeName,  200*12151)
         weights = GetMCTruth(awkArray, 'weight')
         np.save(WeightsFile, weights)
     else:
         if(verbose)>0:
             print(("file {} exists and taking data from there").format(WeightsFile))
-        weights = np.load(WeightsFile)
-
+        weights = np.load(WeightsFile,mmap_mode='r+')
+        print(("len weights = {}").format(weights.shape))
     return MCTruth, weights
 
 def GetModelDir(machine):
@@ -136,11 +146,21 @@ def GetModelPath(machine, params):
     return model_path
 
 def GetPlotDir(machine):
-    plot_directory = dir_dict[machine]["output"]+"/plots"
+    plot_directory = dir_dict[machine]["output"]+"plots/"
     if not os.path.exists(plot_directory):
         print(("{} does not exist, creating it").format(plot_directory))
         os.mkdir(plot_directory)
     return plot_directory
+def GetRateDir(machine, rate):
+    plot_directory = dir_dict[machine]["output"]+"plots/"
+    if not os.path.exists(plot_directory):
+        print(("{} does not exist, creating it").format(plot_directory))
+        os.mkdir(plot_directory)
+    rate_directory = ("{}Rate_{}kHz/").format(plot_directory,rate)
+    if not os.path.exists(rate_directory):
+        print(("{} does not exist, creating it").format(rate_directory))
+        os.mkdir(rate_directory)
+    return rate_directory
 
 def GetRootPath(machine, effRate):
     absolute_path =  dir_dict[machine]["data"]

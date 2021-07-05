@@ -251,6 +251,7 @@ private:
 
           auto& out = trainingTauTuple();
           float l1pt_threshold= 20.0;
+          float l1pt_threshold_Data= 32.0;
           float genlep_eta_threshold = 2.1 ;
           float genlep_VisPt_threshold = 15.0 ;
           float delta_R_threshold = 0.5;
@@ -260,7 +261,7 @@ private:
           };
 
          // QCD and Data
-         if(isQCDDataVBF=="QCD" || isQCDDataVBF=="Data" ){
+         if(isQCDDataVBF=="QCD" ){
             for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
               //if( tau.l1Tau_pt.at(k) >= l1pt_threshold  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
               if(tau.l1Tau_pt.at(k) >= l1pt_threshold) {
@@ -275,6 +276,23 @@ private:
             }
             Fill_L1_Taus(taus_indices);
           }
+          else if(isQCDDataVBF=="Data" ){
+             for(std::vector<int>::size_type k = 0; k != tau.l1Tau_pt.size(); k++){
+               if( tau.l1Tau_pt.at(k) >= l1pt_threshold_Data  && (tau.l1Tau_hwIso.at(k) > 0 || tau.l1Tau_pt.at(k) >= 70)) {
+                 if(tau.defaultDiTauPath_lastModuleIndex>5){
+               //if(tau.l1Tau_pt.at(k) >= l1pt_threshold) {
+                   taus_indices.push_back(k);
+                   out.genLepton_kind = 6;
+                   out.genLepton_vis_pt = -100.;
+                   out.genLepton_vis_eta = -100.;
+                   out.genLepton_vis_phi = -100.;
+                   out.genLepton_charge = -100;
+                   out.genLepton_vis_mass = -100.;
+                  }
+                 }
+             }
+             Fill_L1_Taus(taus_indices);
+           }
          // TT, DY and WJets, ZP, VBF
          else if(isQCDDataVBF=="TT"||isQCDDataVBF=="DY"||isQCDDataVBF=="WJets" || isQCDDataVBF=="VBF" || isQCDDataVBF=="ZPrime"){
             //std::cout<< "evento .. " << tau.evt << std::endl ;

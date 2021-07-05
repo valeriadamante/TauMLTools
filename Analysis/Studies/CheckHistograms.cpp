@@ -14,7 +14,7 @@ void CheckHistograms(){
   std::vector<std::string> QCDFilteredFile = {dataset.GetAbsolutePath()+"DataSetTraining/QCDFiltered.root"};
   dataset.SetQCDFilteredFile(QCDFilteredFile);
   // Data files
-  std::vector<std::string> DataFile = {dataset.GetAbsolutePath()+"DataSetTraining/all_Data_forReweighting.root"};
+  std::vector<std::string> DataFile = {dataset.GetAbsolutePath()+"DataSetTraining/all_Data.root"};
   dataset.SetDataFile(DataFile);
   // VBF files
   std::vector<std::string> VBFFile = {dataset.GetAbsolutePath()+"DataSetTraining/all_VBF.root"};

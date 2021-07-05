@@ -50,9 +50,10 @@ params = {
     'patience_es':10,
     'epochs':100000,
     'bigOrRate': 13603.37,
-    'opt_threshold_3':0.1277466341834952,
-    'opt_threshold_4': 0.08153110369858041,
-    'opt_threshold_5': 0.051069704813926364,
+
+    'opt_threshold_3': 0.1808643564563681,
+    'opt_threshold_4': 0.1226862631719996,
+    'opt_threshold_5': 0.08411392196831002,
 }
 # ***** Get cell grid Matrix *****
 
@@ -70,9 +71,9 @@ print(CellGridMatrix.shape)
 
 # ****** Get DataFrames ******
 #y_predict_test = model.predict(x_test).reshape(y_test.shape)
-variables = ['evt','l1Tau_pt', 'l1Tau_hwIso']
+variables = ['evt','l1Tau_pt', 'l1Tau_hwIso', 'defaultDiTauPath_lastModuleIndex']
 if(args.effRate != 'rate'):
-    variables = ['evt','l1Tau_pt', 'l1Tau_hwIso', 'genLepton_vis_pt','genLepton_vis_eta','genLepton_isTau']
+    variables = ['evt','l1Tau_pt', 'l1Tau_hwIso', 'genLepton_vis_pt','genLepton_vis_eta','genLepton_isTau','defaultDiTauPath_lastModuleIndex']
 inFile = GetRootPath(args.machine, args.effRate)
 treeName = 'L2TauTrainTuple'
 
@@ -85,7 +86,6 @@ if(not os.path.exists(dataFrameWithPredName)):
     model = tf.keras.models.load_model(GetModelPath(args.machine, params))
     print("model successfully loaded")
     df = root_pandas.read_root(inFile, treeName, variables)
-    df = df[(df.l1Tau_pt>=32) & ((df.l1Tau_hwIso>0) | (df.l1Tau_pt>=70))]
     df['y_predict'] = model.predict(CellGridMatrix).reshape(df['evt'].shape)
     root_pandas.to_root(df, dataFrameWithPredName, treeName)
 
@@ -113,7 +113,6 @@ if(args.effRate=='rate'):
 
 
 pt_bins = [20,30,35,40,50,60,70,80,90,350]
-
 def save_dataframe(df, path_name, tuple_name, rateValue, num=False):
     if(num):
         df = df[(df.y_predict>params[('opt_threshold_{}').format(rateValue)])]
@@ -133,6 +132,7 @@ def save_dataframe(df, path_name, tuple_name, rateValue, num=False):
     root_pandas.to_root(df, path_name, tuple_name)
 
 if(args.effRate=='eff'):
+    df = df[(df.defaultDiTauPath_lastModuleIndex>5) & (df.l1Tau_pt>=32) & ((df.l1Tau_hwIso>0) | (df.l1Tau_pt>=70))]
     dataframeDenName = ("{}/df_for_den_VBF.root").format(absolute_path)
     dataframeNumName = ('{}/df_for_num_VBF_forRate{}kHz.root').format(absolute_path, args.rateValue)
     if(not os.path.exists(dataframeDenName)):
@@ -209,8 +209,8 @@ if(args.effRate=='eff'):
         hists[name].GetXaxis().SetTitle("#tau 1 P_{T_} (GeV)")
         hists[name].GetYaxis().SetTitle("#tau 2 P_{T_} (GeV)")
         hists_d[name].GetXaxis().SetTitle("#tau P_{T_} (GeV)")
-    print( ("{}/Rate_{}kHz/EfficienciesCNN_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue))
-    myfile = ROOT.TFile( ("{}/Rate_{}kHz/EfficienciesCNN_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue), 'RECREATE' )
+    print( ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,args.rateValue), args.rateValue))
+    myfile = ROOT.TFile( ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,args.rateValue), args.rateValue), 'RECREATE' )
     hist_num.Write()
     hist_den.Write()
     hist_num_d.Write()
@@ -225,8 +225,8 @@ if(args.effRate=='eff'):
     EffGraph.SetTitle("Algorithmic Efficiency; #tau 1 P_{T} (GeV); #tau 2 P_{T} (GeV)")
     EffGraph.Draw("TEXT2 COLZ")
     canvas1.Update()
-    canvas1.Print(('{}/Rate_{}kHz/Efficiency_VBF_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas1.Print(('{}/Rate_{}kHz/Efficiency_VBF_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas1.Print(('{}/Efficiency_VBF_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas1.Print(('{}/Efficiency_VBF_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
     canvas2=ROOT.TCanvas()
     canvas2.cd()
@@ -239,8 +239,8 @@ if(args.effRate=='eff'):
     EffGraph_d.SetMarkerStyle(20)
     EffGraph_d.Draw()
     canvas2.Update()
-    canvas2.Print(('{}/Rate_{}kHz/Efficiency_VBF_Diag_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas2.Print(('{}/Rate_{}kHz/Efficiency_VBF_Diag_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas2.Print(('{}/Efficiency_VBF_Diag_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas2.Print(('{}/Efficiency_VBF_Diag_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
     canvas3=ROOT.TCanvas()
     canvas3.cd()
@@ -253,8 +253,8 @@ if(args.effRate=='eff'):
     EffGraph_d_sqrt.SetMarkerStyle(20)
     EffGraph_d_sqrt.Draw()
     canvas3.Update()
-    canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas3.Print(('{}/Rate_{}kHz/Efficiency_VBF_sqrt_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas3.Print(('{}/Efficiency_VBF_sqrt_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas3.Print(('{}/Efficiency_VBF_sqrt_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
 
     #save histograms
@@ -343,8 +343,8 @@ if(args.effRate=='Zprime'):
         hists[name].GetXaxis().SetTitle("#tau 1 P_{T_} (GeV)")
         hists[name].GetYaxis().SetTitle("#tau 2 P_{T_} (GeV)")
         hists_d[name].GetXaxis().SetTitle("#tau P_{T_} (GeV)")
-    print( ("{}/Rate_{}kHz/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue))
-    myfile = ROOT.TFile( ("{}/Rate_{}kHz/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetPlotDir(args.machine), args.rateValue, args.rateValue), 'RECREATE' )
+    print( ("{}/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetRateDir(args.machine,args.rateValue), args.rateValue))
+    myfile = ROOT.TFile( ("{}/EfficienciesCNN_ZPrime_forRate{}kHz.root").format(GetRateDir(args.machine,args.rateValue), args.rateValue), 'RECREATE' )
     hist_num.Write()
     hist_den.Write()
     hist_num_d.Write()
@@ -359,8 +359,8 @@ if(args.effRate=='Zprime'):
     EffGraph.SetTitle("Algorithmic Efficiency; #tau 1 P_{T} (GeV); #tau 2 P_{T} (GeV)")
     EffGraph.Draw("TEXT2 COLZ")
     canvas1.Update()
-    canvas1.Print(('{}/Rate_{}kHz/Efficiency_Zprime_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas1.Print(('{}/Rate_{}kHz/Efficiency_Zprime_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas1.Print(('{}/Efficiency_Zprime_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas1.Print(('{}/Efficiency_Zprime_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
     canvas2=ROOT.TCanvas()
     canvas2.cd()
@@ -373,8 +373,8 @@ if(args.effRate=='Zprime'):
     EffGraph_d.SetMarkerStyle(20)
     EffGraph_d.Draw()
     canvas2.Update()
-    canvas2.Print(('{}/Rate_{}kHz/Efficiency_Zprime_Diag_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas2.Print(('{}/Rate_{}kHz/Efficiency_Zprime_Diag_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas2.Print(('{}/Efficiency_Zprime_Diag_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas2.Print(('{}/Efficiency_Zprime_Diag_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
     canvas3=ROOT.TCanvas()
     canvas3.cd()
@@ -387,8 +387,8 @@ if(args.effRate=='Zprime'):
     EffGraph_d_sqrt.SetMarkerStyle(20)
     EffGraph_d_sqrt.Draw()
     canvas3.Update()
-    canvas3.Print(('{}/Rate_{}kHz/Efficiency_Zprime_sqrt_forRate{}kHz.png').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "png")
-    canvas3.Print(('{}/Rate_{}kHz/Efficiency_Zprime_sqrt_forRate{}kHz.pdf').format(GetPlotDir(args.machine),args.rateValue, args.rateValue), "pdf")
+    canvas3.Print(('{}/Efficiency_Zprime_sqrt_forRate{}kHz.png').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "png")
+    canvas3.Print(('{}/Efficiency_Zprime_sqrt_forRate{}kHz.pdf').format(GetRateDir(args.machine,args.rateValue), args.rateValue), "pdf")
 
 
     #save histograms

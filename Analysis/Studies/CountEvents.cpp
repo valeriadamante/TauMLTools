@@ -5,6 +5,7 @@
 void CountEvents(){
   DataSetProducer dataset;
   dataset.SetAbsolutePath("/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/");
+  //dataset.SetAbsolutePath("/home/users/damante/L2SkimmedTuples/");
   // Signal files
   std::vector<std::string> SignalFiles = {dataset.GetAbsolutePath()+"DataSetTraining/all_TT.root",dataset.GetAbsolutePath()+"DataSetTraining/all_DY.root",dataset.GetAbsolutePath()+"DataSetTraining/all_WJetsToLNu.root"};
   dataset.SetSignalFiles(SignalFiles);
@@ -22,6 +23,7 @@ void CountEvents(){
   // ZP files
   std::vector<std::string> ZPFile = {dataset.GetAbsolutePath()+"DataSetTraining/all_ZPrime.root"};
   dataset.SetZPFile(ZPFile);
-  dataset.CountEventInSignalAndBackground();
+  //dataset.CountEventInSignalAndBackground();
+  dataset.FromDFToTTree();
 
 }

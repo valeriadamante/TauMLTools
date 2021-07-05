@@ -17,6 +17,8 @@
     VAR(UInt_t, run) /* run number */ \
     VAR(UInt_t, lumi) /* lumi section */ \
     VAR(ULong64_t, evt) /* event number */ \
+    VAR(ULong64_t, defaultDiTauPath_lastModuleIndex) /* defaultDiTauPath_lastModuleIndex */ \
+    VAR(ULong64_t, defaultDiTauPath_result) /* defaultDiTauPath_result */ \
     VAR(Int_t, nVertices)/*e*/\
     /* Gen lepton with the full decay chain */ \
     VAR(Bool_t, genLepton_isTau) /* genlep index candidate*/ \

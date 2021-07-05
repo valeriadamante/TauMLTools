@@ -44,8 +44,8 @@ params = {
     'dropout_CNN2x2_layers':0,#0.2,
     #'n_units' : len(CellGridMatrix[0,0,0]),
     'batch_size':200,
-    'train_fraction': 0.6102414433536747,
-    'validation_fraction': 0.19474661713982488,
+    'train_fraction': 0.60003292,
+    'validation_fraction': 0.19998354,
     #'learning_rate':0.002,
     'learning_rate':0.001,
     'monitor_es':'val_loss',
@@ -53,11 +53,12 @@ params = {
     'epochs':100000,
     'bigOrRate': 13603.37,
 
-    'opt_threshold_3':0.1277466341834952,
-    'opt_threshold_4': 0.08153110369858041,
-    'opt_threshold_5': 0.051069704813926364,
 
+    'opt_threshold_3': 0.1808643564563681,
+    'opt_threshold_4': 0.1226862631719996,
+    'opt_threshold_5': 0.08411392196831002,
 }
+
 # ***** Get cell grid Matrix *****
 kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : False, 'verbose' : args.verbose}
 CellGridMatrix = GetCellGridNormMatrix(args.machine, args.effRate, **kwArgs)
@@ -91,7 +92,7 @@ predictions = [round_for_th(params[('opt_threshold_{}').format(args.rateValue)],
 accuracy = accuracy_score(y_test, predictions)
 print("Accuracy: %.2f%%" % (accuracy * 100.0))
 df = pd.read_csv(GetModelPath(args.machine, params)+".csv")
-
+print(df.head())
 # plot loss vs epoch for validation and training
 fig = plt.figure(figsize=(5,5))
 #plt.figure()
@@ -102,8 +103,8 @@ plt.title('loss VS epoch')
 plt.xlabel('epoch')
 plt.ylabel('loss')
 
-fig.savefig(('{}/Rate_{}kHz/loss_plot_{}.pdf').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
-fig.savefig(('{}/Rate_{}kHz/loss_plot_{}.png').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
+fig.savefig(('{}/loss_plot_{}.pdf').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
+fig.savefig(('{}/loss_plot_{}.png').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
 
 
 # plot accuracy vs epoch for validation and training
@@ -114,8 +115,8 @@ plt.legend(loc="lower left")
 plt.title('accuracy VS epoch')
 plt.xlabel('epoch')
 plt.ylabel('acc')
-fig.savefig(('{}/Rate_{}kHz/accuracy_plot_{}.pdf').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
-fig.savefig(('{}/Rate_{}kHz/accuracy_plot_{}.png').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
+fig.savefig(('{}/accuracy_plot_{}.pdf').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
+fig.savefig(('{}/accuracy_plot_{}.png').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
 # Plot ROC
 # generate a no skill prediction (majority class)
 ns_probs = [0 for _ in range(len(y_test))]
@@ -143,8 +144,8 @@ plt.ylabel('true positive rate')
 plt.title('receiver operating curve')
 plt.legend(loc="lower right")
 
-fig.savefig(('{}/Rate_{}kHz/ROC_onlyTest_{}.pdf').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
-fig.savefig(('{}/Rate_{}kHz/ROC_onlyTest_{}.png').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
+fig.savefig(('{}/ROC_onlyTest_{}.pdf').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
+fig.savefig(('{}/ROC_onlyTest_{}.png').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
 # plot distribution signal and background for train and test
 decisions, low_high=compare_train_test(model, x_train, y_train, x_test, y_test)
 
@@ -175,8 +176,8 @@ plt.legend(loc='best')
 #for par in params:
 #  print(par , "= ", params[par])
 
-fig.savefig(('{}/Rate_{}kHz/compare_train_test_plot_{}.pdf').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
-fig.savefig(('{}/Rate_{}kHz/compare_train_test_plot_{}.png').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
+fig.savefig(('{}/compare_train_test_plot_{}.pdf').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
+fig.savefig(('{}/compare_train_test_plot_{}.png').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
 
 
 fig = plt.figure()
@@ -213,6 +214,6 @@ plt.ylabel('True Positive Rate')
 plt.legend()
 # show the plot
 
-fig.savefig(('{}/Rate_{}kHz/ROC_TestVal_{}.pdf').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
-fig.savefig(('{}/Rate_{}kHz/ROC_TestVal_{}.png').format(GetPlotDir(args.machine), args.rateValue,GetFileSuffix(params)))
+fig.savefig(('{}/ROC_TestVal_{}.pdf').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
+fig.savefig(('{}/ROC_TestVal_{}.png').format(GetRateDir(args.machine,args.rateValue),GetFileSuffix(params)))
 #model.save("output/model_"+GetFileSuffix(params))\

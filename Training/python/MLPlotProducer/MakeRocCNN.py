@@ -4,7 +4,8 @@ import awkward as ak
 import pickle
 import numpy as np
 import json
-from  TauMLTools.Training.python.DataLoaderL2ForCNN import *
+import time
+from  TauMLTools.Training.python.produceGridDatasets import *
 import matplotlib
 matplotlib.use('agg')
 import pylab as plt
@@ -13,7 +14,7 @@ import os
 import argparse
 import shutil
 
-def plot_ROC(outDir, ns_fpr, ns_tpr, lr_fpr, lr_tpr, ts_fpr, ts_tpr):
+def plot_ROC(outDir, ns_fpr, ns_tpr, lr_fpr, lr_tpr, ts_fpr, ts_tpr, file_suffix):
     fig = plt.figure()
     # calculate roc curves
     # plot the roc curve for the model
@@ -38,74 +39,16 @@ def plot_ROC(outDir, ns_fpr, ns_tpr, lr_fpr, lr_tpr, ts_fpr, ts_tpr):
     #model.save("output/model_"+file_suffix)
 
 parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser()
 parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
+parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate', 'Zprime'])
 parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
-parser.add_argument('--input_file', required=False, type=str, default='DataSetTrainingWeight.root', help='input file name')
-parser.add_argument('--output_file', required=False, type=str, default='CellGrid.npy', help='output file name')
-parser.add_argument('--output_fileNorm', required=False, type=str, default='CellGridNorm.npy', help='output file name')
-parser.add_argument('--dict_file', required=False, type=str, default='NormalizationDict.json', help='output file name')
 parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
 parser.add_argument('--Weights_file', required=False, type=str, default='weights.npy', help='output file name')
-parser.add_argument('--input_tuple', required=False, type=str, default='L2TauTrainTuple', help='input tree name')
 parser.add_argument('--n_cellsX', required=False, type=int, default=5, help='number of cells along X dir')
 parser.add_argument('--n_cellsY', required=False, type=int, default=5, help='number of cells along Y dir')
 parser.add_argument('--verbose', required=False, type=int, default=0)
-parser.add_argument('--gpu', required=False, type=bool, default=False)
 args = parser.parse_args()
-# ****** Define directories *******
-dir_dict = {} # add also pccms65
-dir_dict["cmssimphase2"]={}
-dir_dict["cmssimphase2"]["data"]="/home/valeria/DataSetTraining/"
-dir_dict["cmssimphase2"]["model"]="/home/valeria/model/"
-dir_dict["cmssimphase2"]["output"]="/home/valeria/output/"
-dir_dict["local"]={}
-dir_dict["local"]["data"]="/Users/valeriadamante/Desktop/Dottorato/L2SkimmedTuples/DataSetTraining/"
-dir_dict["local"]["model"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/model/"
-dir_dict["local"]["output"]="/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/output/"
-# ******** Define file & tuple names ********
-absolute_path =  dir_dict[args.machine]["data"]
-treeName = args.input_tuple
-inFile = absolute_path+args.input_file
-outFile = absolute_path+args.output_file
-outFileNorm = absolute_path+args.output_fileNorm
-dictFile = absolute_path+args.dict_file
-MCTruthFile = absolute_path+args.McTruth_file
-WeightsFile = absolute_path+args.Weights_file
-modelDir = dir_dict[args.machine]["model"]
-outDir = dir_dict[args.machine]["output"]
-if not os.path.exists(outDir):
-    os.mkdir(outDir)
-# ****** cell number and var definition ******
-n_cellsX = args.n_cellsX
-n_cellsY = args.n_cellsY
-nVars = len(NNInputs)
-# ***** Load CellGrid Matrix *******
-if(args.verbose)>0:
-    print("loading CellGridMatrix")
-CellGridMatrix = getNormCellGridMatrix(nVars, n_cellsX, n_cellsY,inFile, treeName, outFile, outFileNorm, dictFile, args.time, args.n_max_events, args.verbose)
-# ***** Load MCTruth Matrix *******
-if(args.verbose)>0:
-    print("Loading MCTruthFile")
-if not os.path.exists(MCTruthFile):
-    awkArray = GetAwkArray(inFile, treeName)
-    MCTruth = GetMCTruth(awkArray, 'genLepton_isTau')
-    np.save(MCTruthFile, MCTruth)
-else:
-    if(args.verbose)>0:
-        print(("file {} exists and taking data from there").format(MCTruthFile))
-    MCTruth = np.load(MCTruthFile)
-# ****** Load Weights matrix *******
-if not os.path.exists(WeightsFile):
-    if(args.verbose)>0:
-        print("Loading WeightsFile")
-    awkArray = GetAwkArray(inFile, treeName)
-    weights = GetMCTruth(awkArray, 'weight')
-    np.save(WeightsFile, weights)
-else:
-    if(args.verbose)>0:
-        print(("file {} exists and taking data from there").format(WeightsFile))
-    weights = np.load(WeightsFile)
-# ****** Define CNN params ******
 params = {
     'num_dense_layers':3,
     'num_CNN1x1_layers':4,
@@ -129,22 +72,29 @@ params = {
     'dropout_CNN2x2_layers':0,#0.2,
     #'n_units' : len(CellGridMatrix[0,0,0]),
     'batch_size':200,
-    'train_fraction': 0.6102414433536747,
-    'validation_fraction': 0.19474661713982488,
-    'bigOrRate': 13603.37,
+    'train_fraction': 0.60003292,
+    'validation_fraction': 0.19998354,
     #'learning_rate':0.002,
     'learning_rate':0.001,
     'monitor_es':'val_loss',
     'patience_es':10,
     'epochs':100000,
+    'bigOrRate': 13603.37
 }
+# ***** Get cell grid Matrix *****
+kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : True, 'verbose' : args.verbose}
+CellGridMatrix = GetCellGridNormMatrix(args.machine, args.effRate, **kwArgs)
+# ***** Get MC and weights Matrices *****
+if(args.effRate== 'test'):
+    MCTruth, weights = GetMCTruthWeights(args.machine, args.McTruth_file, args.Weights_file, **kwArgs)
+    # ****** Get train - test - validation samples ********
+    if(args.verbose)>0:
+        print("preparing train/test/val samples")
+    number_of_batches = len(MCTruth)/params['batch_size']
+    x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrainTestFraction(MCTruth, CellGridMatrix, weights, params['train_fraction'],  params['validation_fraction'], args.verbose)
 
 
-# ****** Get train - test - validation samples ********
-if(args.verbose)>0:
-    print("preparing train/test/val samples")
-number_of_batches = len(MCTruth)/params['batch_size']
-x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrainTestFraction(MCTruth, CellGridMatrix, weights, params['train_fraction'],  params['validation_fraction'], args.verbose)
+
 # ******* parameter setting ******
 # do =
 # lr =
@@ -155,39 +105,10 @@ x_train, y_train, w_train, x_test, y_test, w_test, x_val, y_val, w_val = GetTrai
 # params['learning_rate'] = lr
 # params['num_den_layers'] = ly
 
-# ***** create model directory *****
-#{}
-#file_suffix =
-file_suffix=("model_{}D{}CNN1{}CNN2_{:.2f}Dropout_{:.4f}LearningRate").format(params['num_dense_layers'],params['num_CNN1x1_layers'],params['num_CNN2x2_layers'],params['dropout_dense_layers'],params['learning_rate'])
-print(file_suffix)
-file_suffix = file_suffix.replace(".","p")
 
-model_directory=modelDir+file_suffix
-if not os.path.exists(model_directory):
-    os.mkdir(model_directory)
-
-log_directory = model_directory+"/log"
-if not os.path.exists(log_directory):
-    os.mkdir(log_directory)
-
-history_directory = model_directory+"/history"
-if not os.path.exists(history_directory):
-    os.mkdir(history_directory)
-
-plot_directory = outDir+"/plots"
-if not os.path.exists(plot_directory):
-    os.mkdir(plot_directory)
-
-var_directory = model_directory+"/vars"
-if not os.path.exists(var_directory):
-    os.mkdir(var_directory)
-# creating files to be written
-model_path = model_directory+"/"+file_suffix
-if os.path.exists(model_path):
-    print(("{} exists").format(model_path))
-else:
-    print(("{} does not exist").format(model_path))
-    #continue
+# ***** load model ******
+model = tf.keras.models.load_model(GetModelPath(args.machine, params))
+print("model successfully loaded")
 
 best_auc_val = 0.
 best_auc_test = 0.
@@ -195,10 +116,6 @@ best_acc_test = 0.
 best_acc_val = 0.
 best_auc_val_file = ""
 best_auc_test_file = ""
-
-
-model = keras.models.load_model(model_path)
-print("model successfully loaded")
 
 from sklearn.metrics import roc_curve, auc
 # calculate scores
@@ -235,13 +152,14 @@ lr_fpr, lr_tpr, lr_thresholds = roc_curve(y_val, y_predict_val, sample_weight=w_
 ts_fpr, ts_tpr, ts_thresholds = roc_curve(y_test, y_predict_test, sample_weight=w_test)
 if(lr_auc > best_auc_val):
     best_auc_val = lr_auc
-    best_auc_val_file = model_path
+    best_auc_val_file = GetModelPath(args.machine, params)
     best_acc_val = accuracy_val
 if(ts_auc > best_auc_test):
     best_auc_test =  ts_auc
-    best_auc_test_file = model_path
+    best_auc_test_file = GetModelPath(args.machine, params)
     best_acc_test = accuracy_test
-plot_ROC(outDir,ns_fpr, ns_tpr, lr_fpr, lr_tpr, ts_fpr, ts_tpr)
+outDir=GetOutPath(args.machine)
+plot_ROC(outDir,ns_fpr, ns_tpr, lr_fpr, lr_tpr, ts_fpr, ts_tpr,GetFileSuffix(params))
 
 
 print(("best AUC validation is : {:.3f} from the file {}").format(best_auc_val, best_auc_val_file) )

@@ -52,9 +52,9 @@ params = {
     'epochs':100000,
     'bigOrRate': 13603.37,
 
-    'opt_threshold_3':0.1277466341834952,
-    'opt_threshold_4': 0.08153110369858041,
-    'opt_threshold_5': 0.051069704813926364,
+    'opt_threshold_3': 0.1808643564563681,
+    'opt_threshold_4': 0.1226862631719996,
+    'opt_threshold_5': 0.08411392196831002,
 }
 evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/"
 evtfileDir = ("{}/{}_{}").format(evtTuplePath, args.sample, args.corr)
@@ -236,17 +236,20 @@ eventTuple_file_algo = ROOT.TFile(Eff_algo_cb, "READ")
 histNum_algo_cb = ROOT.TH1D(eventTuple_file_algo.Get( "passed_algo" ) )
 histDen_algo_cb = ROOT.TH1D(eventTuple_file_algo.Get( "total_algo" ) )
 
-eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate3kHz_{}.root").format(CNNfileDir, args.sample)
+rate = 3
+eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
 tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
 histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
 histDen_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
 
-eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate4kHz_{}.root").format(CNNfileDir, args.sample)
+rate = 4
+eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
 tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
 histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
 histDen_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
 
-eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate5kHz_{}.root").format(CNNfileDir, args.sample)
+rate = 5
+eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
 tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
 histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
 histDen_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
@@ -269,7 +272,7 @@ names["histTitle"] = "Absolute Efficiency"
 names["yAxisTitle"] = "efficiency"
 names["outFile"] =("{}/Absolute_Efficiency_diagonal_{}_{}").format(plotDir, args.sample, args.corr)
 beautify_plot_canvas(histNum_abs_cb, histDen_abs_cb, histNum_cnn3, histDen_abs_cb, histNum_cnn4,histDen_abs_cb,histNum_cnn5, histDen_abs_cb, names)
-'''
+
 # 1d single plots - quite unuseful !!
 names["histTitle"] = "Absolute Efficiency for CB"
 names["outFile"] = plotDir+"/L2eff_abs_diag_cb"
@@ -287,7 +290,7 @@ beautify_plot_canvas_1hist(histNum_cnn4, histDen_abs_cb, names)
 names["histTitle"] = "Absolute L1 Efficiency"
 names["outFile"] = ('{}/Rate_5kHz/L1_Efficiency_diagonal_5kHz').format(plotDir)
 beautify_plot_canvas_1hist(histNum_cnn5, histDen_abs_cb, names)
-'''
+
 
 # BOR eff cutbased - BOR  eff  dnn (it should be the same) - 2 different plots
 
@@ -302,20 +305,19 @@ names["yAxisTitle"] = "efficiency"
 names["outFile"] =("{}/Absolute_L1Efficiency_diagonal_{}_{}").format(plotDir, args.sample, args.corr)
 #beautify_plot_canvas_1hist(histNum_BOR_cb, histDen_BOR_forAll, names)
 
-'''
-names["histTitle"] = "Absolute L1 Efficiency for CB"
-names["outFile"] = plotDir+"/L1eff_abs_diag_cb"
-beautify_plot_canvas_1hist(histNum_BOR_cb, histDen_BOR_forAll, names)
 
-names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = ('{}/Rate_3kHz/L1_Efficiency_diagonal_3kHz').format(plotDir)
-beautify_plot_canvas_1hist(histNum_cnn3, histDen_BOR_forAll, names)
+#names["histTitle"] = "Absolute L1 Efficiency for CB"
+#names["outFile"] = plotDir+"/L1eff_abs_diag_cb"
+#beautify_plot_canvas_1hist(histNum_BOR_cb, histDen_BOR_forAll, names)
 
-names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = ('{}/Rate_4kHz/L1_Efficiency_diagonal_4kHz').format(plotDir)
-beautify_plot_canvas_1hist(histNum_cnn4, histDen_BOR_forAll, names)
+#names["histTitle"] = "Absolute L1 Efficiency"
+#names["outFile"] = ('{}/Rate_3kHz/L1_Efficiency_diagonal_3kHz').format(plotDir)
+#beautify_plot_canvas_1hist(histNum_cnn3, histDen_BOR_forAll, names)
 
-names["histTitle"] = "Absolute L1 Efficiency"
-names["outFile"] = ('{}/Rate_5kHz/L1_Efficiency_diagonal_5kHz').format(plotDir)
-beautify_plot_canvas_1hist(histNum_cnn5, histDen_BOR_forAll, names)
-'''
+#names["histTitle"] = "Absolute L1 Efficiency"
+#names["outFile"] = ('{}/Rate_4kHz/L1_Efficiency_diagonal_4kHz').format(plotDir)
+#beautify_plot_canvas_1hist(histNum_cnn4, histDen_BOR_forAll, names)
+
+#names["histTitle"] = "Absolute L1 Efficiency"
+#names["outFile"] = ('{}/Rate_5kHz/L1_Efficiency_diagonal_5kHz').format(plotDir)
+#beautify_plot_canvas_1hist(histNum_cnn5, histDen_BOR_forAll, names)

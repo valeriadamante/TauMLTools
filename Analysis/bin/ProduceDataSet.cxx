@@ -18,7 +18,7 @@ struct Arguments {
     run::Argument<std::string> output{"output", "output root file with training tuple"};
     run::Argument<unsigned> n_threads{"n-threads", "number of threads", 1};
     run::Argument<Long64_t> first_iteration{"first-iteration", "first iterations", 0};
-    run::Argument<Long64_t> max_iterations{"max-iterations", "max iterations", 3780};
+    run::Argument<Long64_t> max_iterations{"max-iterations", "max iterations", 12152};
     //run::Argument<Long64_t> end_entry{"end-entry", "end entry", std::numeric_limits<Long64_t>::max()};
     //run::Argument<float> training_weight_factor{"training-weight-factor",
     //    "additional factor to the normalization of the training weights", 4.f};
@@ -36,14 +36,16 @@ public:
     using TrainingTau = tau_train_tuple::Tau;
     using TrainingTauTuple = tau_train_tuple::TauTrainTuple;
     //std::vector<std::string> inputFiles = {absolute_path+"all_WJetsToLNu.root", absolute_path+"all_TT.root" , absolute_path+"all_DY.root", absolute_path+"all_ZPrime.root", absolute_path+"QCDFiltered.root" };
-    //std::vector<int> all_events = {26362, 139019, 182810, 405918};
-    std::vector<int> all_events = {26363, 139059, 182811, 407783};
-    std::vector<int> all_events_norm = {7, 37, 49, 107};
-    const int filling_WJ = 7 ;
-    const int filling_TT = 37 ;
-    const int filling_DY = 49 ;
-    //const int filling_ZP = 30 ;
-    const int filling_QCD = 107 ;
+    //std::vector<int> all_events = {26362, 139019, 182810, 405918}; // 1st iteration
+    // std::vector<int> all_events = {26363, 139059, 182811, 407783}; // 2nd iteration
+    // TT - DY - WJ - QCD
+    std::vector<int> all_events = {258559, 473078, 78699, 1620224}; // 3rd iteration
+    //td::vector<int> all_events_norm = {7, 37, 49, 107}; // 1st and 2nd iterations
+    std::vector<int> all_events_norm = {21, 39, 7, 133}; // 3rd iteration
+    const int filling_WJ = 7; // 7 ;
+    const int filling_TT = 21; // 37 ;
+    const int filling_DY = 39; // 49 ;
+    const int filling_QCD = 133; //107 ;
 
     DataSetProducer(const Arguments& _args) :
         args(_args), WJetFile(root_ext::OpenRootFile(absolute_path+"all_WJetsToLNu.root")), TTFile(root_ext::OpenRootFile(absolute_path+"all_TT.root")), /*ZPrimeFile(root_ext::OpenRootFile(absolute_path+"all_ZPrime.root")),*/ DYFile(root_ext::OpenRootFile(absolute_path+"all_DY.root")), QCDFile(root_ext::OpenRootFile(absolute_path+"QCDFiltered.root")),outputFile(root_ext::CreateRootFile(absolute_path+args.output(), ROOT::kLZ4, 4)), WJTuple(WJetFile.get(), true), TTTuple( TTFile.get(), true), /*ZPrimeTuple( ZPrimeFile.get(), true),*/ DYTuple( DYFile.get(), true), QCDTuple( QCDFile.get(), true), outputTuple(outputFile.get(), false)
@@ -56,7 +58,9 @@ public:
     void Run()
     {
         const Long64_t first_iteration =0;
-        const Long64_t n_iterations = 3780;
+        //const Long64_t n_iterations = 3770; // 1st iteration
+        //const Long64_t n_iterations = 3780; // 2nd iteration
+        const Long64_t n_iterations = 12152; // 3rd iteration
         int filling_counter = std::max(first_iteration, args.first_iteration());
         int WJ_counter =std::max(first_iteration, args.first_iteration()*filling_WJ);
         int TT_counter =std::max(first_iteration, args.first_iteration()*filling_TT);
@@ -69,7 +73,7 @@ public:
         while(filling_counter < filling_counter_max){
           /* WJets */
           if(WJ_counter>=WJTuple.GetEntries()){
-            std::cout << "superate entries" << std::endl ;
+            std::cout << "superate entries per WJ" << std::endl ;
             WJ_counter =0;
           }
           WriteTuple(WJTuple, WJ_counter, filling_WJ);
@@ -81,7 +85,7 @@ public:
 
           /* TT */
           if(TT_counter>=TTTuple.GetEntries()){
-            std::cout << "superate entries" << std::endl ;
+            std::cout << "superate entries per TT " << std::endl ;
             TT_counter =0;
           }
           WriteTuple(TTTuple, TT_counter, filling_TT);
@@ -93,7 +97,7 @@ public:
 
           /* DY */
           if(DY_counter>=DYTuple.GetEntries()){
-            std::cout << "superate entries" << std::endl ;
+            std::cout << "superate entries per DY" << std::endl ;
             DY_counter =0;
           }
           WriteTuple(DYTuple, DY_counter, filling_DY);
@@ -135,104 +139,122 @@ private :
           CopyBranches(tau);
       }
     }
-
+    #define CP_BR(name) outputTuple().name = tau.name;
     void CopyBranches(const TrainingTau& tau)
     {
         auto& out = outputTuple();
-        out.run = tau.run;
-        out.lumi = tau.lumi;
-        out.evt = tau.evt;
-        out.genEventWeight = tau.genEventWeight;
-        out.sampleType= tau.sampleType;
-        out.genLepton_index= tau.genLepton_index;
-        out.genLepton_kind= tau.genLepton_kind;
-        out.genLepton_charge= tau.genLepton_charge;
-        out.l1Tau_index= tau.l1Tau_index;
-        out.genLepton_vis_pt= tau.genLepton_vis_pt;
-        out.genLepton_vis_eta= tau.genLepton_vis_eta;
-        out.genLepton_vis_phi= tau.genLepton_vis_phi;
-        out.genLepton_vis_mass= tau.genLepton_vis_mass;
-        out.l1Tau_pt= tau.l1Tau_pt;
-        out.l1Tau_eta= tau.l1Tau_eta;
-        out.l1Tau_phi= tau.l1Tau_phi;
-        out.l1Tau_mass= tau.l1Tau_mass;
-        out.l1Tau_hwIso= tau.l1Tau_hwIso;
-        out.l1Tau_hwQual= tau.l1Tau_hwQual;
-        out.l1Tau_towerIEta= tau.l1Tau_towerIEta;
-        out.l1Tau_towerIPhi= tau.l1Tau_towerIPhi;
-        out.l1Tau_rawEt= tau.l1Tau_rawEt;
-        out.l1Tau_isoEt= tau.l1Tau_isoEt;
-        out.l1Tau_hasEM= tau.l1Tau_hasEM;
-        out.l1Tau_isMerged= tau.l1Tau_isMerged;
-        out.caloRecHit_eb_rho= tau.caloRecHit_eb_rho;
-        out.caloRecHit_ee_rho= tau.caloRecHit_ee_rho;
-        out.caloRecHit_eb_eta= tau.caloRecHit_eb_eta;
-        out.caloRecHit_ee_eta= tau.caloRecHit_ee_eta;
-        out.caloRecHit_eb_phi= tau.caloRecHit_eb_phi;
-        out.caloRecHit_ee_phi= tau.caloRecHit_ee_phi;
-        out.caloRecHit_eb_energy= tau.caloRecHit_eb_energy;
-        out.caloRecHit_ee_energy= tau.caloRecHit_ee_energy;
-        out.caloRecHit_eb_time= tau.caloRecHit_eb_time;
-        out.caloRecHit_ee_time= tau.caloRecHit_ee_time;
-        out.caloRecHit_eb_detId= tau.caloRecHit_eb_detId;
-        out.caloRecHit_ee_detId= tau.caloRecHit_ee_detId;
-        out.caloRecHit_eb_chi2= tau.caloRecHit_eb_chi2;
-        out.caloRecHit_ee_chi2= tau.caloRecHit_ee_chi2;
-        out.caloRecHit_eb_energyError= tau.caloRecHit_eb_energyError;
-        out.caloRecHit_ee_energyError= tau.caloRecHit_ee_energyError;
-        out.caloRecHit_eb_timeError= tau.caloRecHit_eb_timeError;
-        out.caloRecHit_ee_timeError= tau.caloRecHit_ee_timeError;
-        out.caloRecHit_eb_flagsBits= tau.caloRecHit_eb_flagsBits;
-        out.caloRecHit_ee_flagsBits= tau.caloRecHit_ee_flagsBits;
-        out.caloRecHit_eb_isRecovered= tau.caloRecHit_eb_isRecovered;
-        out.caloRecHit_ee_isRecovered= tau.caloRecHit_ee_isRecovered;
-        out.caloRecHit_eb_isTimeValid= tau.caloRecHit_eb_isTimeValid;
-        out.caloRecHit_ee_isTimeValid= tau.caloRecHit_ee_isTimeValid;
-        out.caloRecHit_eb_isTimeErrorValid= tau.caloRecHit_eb_isTimeErrorValid;
-        out.caloRecHit_ee_isTimeErrorValid= tau.caloRecHit_ee_isTimeErrorValid;
-        out.caloRecHit_hbhe_rho= tau.caloRecHit_hbhe_rho;
-        out.caloRecHit_hbhe_eta= tau.caloRecHit_hbhe_eta;
-        out.caloRecHit_hbhe_phi= tau.caloRecHit_hbhe_phi;
-        out.caloRecHit_hbhe_energy= tau.caloRecHit_hbhe_energy;
-        out.caloRecHit_hbhe_time= tau.caloRecHit_hbhe_time;
-        out.caloRecHit_hbhe_detId= tau.caloRecHit_hbhe_detId;
-        out.caloRecHit_hbhe_chi2= tau.caloRecHit_hbhe_chi2;
-        out.caloRecHit_hbhe_flags= tau.caloRecHit_hbhe_flags;
-        out.caloRecHit_ho_rho= tau.caloRecHit_ho_rho;
-        out.caloRecHit_ho_eta= tau.caloRecHit_ho_eta;
-        out.caloRecHit_ho_phi= tau.caloRecHit_ho_phi;
-        out.caloRecHit_ho_energy= tau.caloRecHit_ho_energy;
-        out.caloRecHit_ho_time= tau.caloRecHit_ho_time;
-        out.caloRecHit_ho_detId= tau.caloRecHit_ho_detId;
-        out.caloRecHit_ho_aux= tau.caloRecHit_ho_aux;
-        out.caloRecHit_ho_flags= tau.caloRecHit_ho_flags;
-        out.caloRecHit_hf_rho= tau.caloRecHit_hf_rho;
-        out.caloRecHit_hf_eta= tau.caloRecHit_hf_eta;
-        out.caloRecHit_hf_phi= tau.caloRecHit_hf_phi;
-        out.caloRecHit_hf_energy= tau.caloRecHit_hf_energy;
-        out.caloRecHit_hf_time= tau.caloRecHit_hf_time;
-        out.caloRecHit_hf_detId= tau.caloRecHit_hf_detId;
-        out.caloRecHit_hf_flags= tau.caloRecHit_hf_flags;
-        out.caloRecHit_hf_timeFalling= tau.caloRecHit_hf_timeFalling;
-        out.caloRecHit_hf_auxHF= tau.caloRecHit_hf_auxHF;
-        out.caloRecHit_hf_aux= tau.caloRecHit_hf_aux;
-        out.patatrack_pt= tau.patatrack_pt;
-        out.patatrack_eta= tau.patatrack_eta;
-        out.patatrack_phi= tau.patatrack_phi;
-        out.patatrack_chi2= tau.patatrack_chi2;
-        out.patatrack_ndof= tau.patatrack_ndof;
-        out.patatrack_charge= tau.patatrack_charge;
-        out.patatrack_quality= tau.patatrack_quality;
-        out.patatrack_dxy= tau.patatrack_dxy;
-        out.patatrack_dz= tau.patatrack_dz;
-        out.patatrack_vertex_id= tau.patatrack_vertex_id;
-        out.patavert_z= tau.patavert_z;
-        out.patavert_weight= tau.patavert_weight;
-        out.patavert_ptv2= tau.patavert_ptv2;
-        out.patavert_chi2= tau.patavert_chi2;
-        out.patavert_ndof= tau.patavert_ndof;
+        CP_BR(evt);
+        CP_BR(run);
+        CP_BR(lumi);
+        CP_BR(defaultDiTauPath_lastModuleIndex);
+        CP_BR(defaultDiTauPath_result);
+        CP_BR(genEventWeight);
+        CP_BR(sampleType);
+        CP_BR(l1Tau_index);
+        CP_BR(l1Tau_pt);
+        CP_BR(l1Tau_eta);
+        CP_BR(l1Tau_phi);
+        CP_BR(l1Tau_mass);
+        CP_BR(l1Tau_hwIso);
+        CP_BR(l1Tau_hwQual);
+        CP_BR(l1Tau_towerIEta);
+        CP_BR(l1Tau_towerIPhi);
+        CP_BR(genLepton_index);
+        CP_BR(genLepton_kind);
+        CP_BR(genLepton_charge);
+        CP_BR(genLepton_vis_eta);
+        CP_BR(genLepton_vis_pt);
+        CP_BR(genLepton_vis_mass);
+        CP_BR(genLepton_vis_phi);
+        CP_BR(l1Tau_rawEt);
+        CP_BR(l1Tau_isoEt);
+        CP_BR(l1Tau_hasEM);
+        CP_BR(l1Tau_isMerged);
+
+        for(long unsigned int i=0; i < tau.caloRecHit_eb_rho.size() ; i++){
+          out.caloRecHit_eb_rho.push_back(static_cast<float>(tau.caloRecHit_eb_rho.at(i)));
+          out.caloRecHit_eb_eta.push_back(static_cast<float>(tau.caloRecHit_eb_eta.at(i)));
+          out.caloRecHit_eb_phi.push_back(static_cast<float>(tau.caloRecHit_eb_phi.at(i)));
+          out.caloRecHit_eb_energy.push_back(static_cast<float>(tau.caloRecHit_eb_energy.at(i)));
+          out.caloRecHit_eb_time.push_back(static_cast<float>(tau.caloRecHit_eb_time.at(i)));
+          out.caloRecHit_eb_detId.push_back(static_cast<ulong>(tau.caloRecHit_eb_detId.at(i)));
+          out.caloRecHit_eb_chi2.push_back(static_cast<float>(tau.caloRecHit_eb_chi2.at(i)));
+          out.caloRecHit_eb_energyError.push_back(static_cast<float>(tau.caloRecHit_eb_energyError.at(i)));
+          out.caloRecHit_eb_timeError.push_back(static_cast<float>(tau.caloRecHit_eb_timeError.at(i)));
+          out.caloRecHit_eb_flagsBits.push_back(static_cast<uint32_t>(tau.caloRecHit_eb_flagsBits.at(i)));
+          out.caloRecHit_eb_isRecovered.push_back(static_cast<bool>(tau.caloRecHit_eb_isRecovered.at(i)));
+          out.caloRecHit_eb_isTimeValid.push_back(static_cast<bool>(tau.caloRecHit_eb_isTimeValid.at(i)));
+          out.caloRecHit_eb_isTimeErrorValid.push_back(static_cast<bool>(tau.caloRecHit_eb_isTimeErrorValid.at(i)));
+        }
+        for(long unsigned int i=0; i < tau.caloRecHit_ee_rho.size() ; i++){
+          out.caloRecHit_ee_rho.push_back(static_cast<float>(tau.caloRecHit_ee_rho.at(i)));
+          out.caloRecHit_ee_eta.push_back(static_cast<float>(tau.caloRecHit_ee_eta.at(i)));
+          out.caloRecHit_ee_phi.push_back(static_cast<float>(tau.caloRecHit_ee_phi.at(i)));
+          out.caloRecHit_ee_energy.push_back(static_cast<float>(tau.caloRecHit_ee_energy.at(i)));
+          out.caloRecHit_ee_time.push_back(static_cast<float>(tau.caloRecHit_ee_time.at(i)));
+          out.caloRecHit_ee_detId.push_back(static_cast<ulong>(tau.caloRecHit_ee_detId.at(i)));
+          out.caloRecHit_ee_chi2.push_back(static_cast<float>(tau.caloRecHit_ee_chi2.at(i)));
+          out.caloRecHit_ee_energyError.push_back(static_cast<float>(tau.caloRecHit_ee_energyError.at(i)));
+          out.caloRecHit_ee_timeError.push_back(static_cast<float>(tau.caloRecHit_ee_timeError.at(i)));
+          out.caloRecHit_ee_flagsBits.push_back(static_cast<uint32_t>(tau.caloRecHit_ee_flagsBits.at(i)));
+          out.caloRecHit_ee_isRecovered.push_back(static_cast<bool>(tau.caloRecHit_ee_isRecovered.at(i)));
+          out.caloRecHit_ee_isTimeValid.push_back(static_cast<bool>(tau.caloRecHit_ee_isTimeValid.at(i)));
+          out.caloRecHit_ee_isTimeErrorValid.push_back(static_cast<bool>(tau.caloRecHit_ee_isTimeErrorValid.at(i)));
+        }
+        for(long unsigned int i=0; i < tau.caloRecHit_hbhe_rho.size() ; i++){
+          out.caloRecHit_hbhe_rho.push_back(static_cast<float>(tau.caloRecHit_hbhe_rho.at(i)));
+          out.caloRecHit_hbhe_eta.push_back(static_cast<float>(tau.caloRecHit_hbhe_eta.at(i)));
+          out.caloRecHit_hbhe_phi.push_back(static_cast<float>(tau.caloRecHit_hbhe_phi.at(i)));
+          out.caloRecHit_hbhe_energy.push_back(static_cast<float>(tau.caloRecHit_hbhe_energy.at(i)));
+          out.caloRecHit_hbhe_time.push_back(static_cast<float>(tau.caloRecHit_hbhe_time.at(i)));
+          out.caloRecHit_hbhe_detId.push_back(static_cast<ulong>(tau.caloRecHit_hbhe_detId.at(i)));
+          out.caloRecHit_hbhe_chi2.push_back(static_cast<float>(tau.caloRecHit_hbhe_chi2.at(i)));
+          out.caloRecHit_hbhe_flags.push_back(static_cast<ulong>(tau.caloRecHit_hbhe_flags.at(i)));
+        }
+        for(long unsigned int i=0; i < tau.caloRecHit_ho_rho.size() ; i++){
+        out.caloRecHit_ho_rho.push_back(static_cast<float>(tau.caloRecHit_ho_rho.at(i)));
+        out.caloRecHit_ho_eta.push_back(static_cast<float>(tau.caloRecHit_ho_eta.at(i)));
+        out.caloRecHit_ho_phi.push_back(static_cast<float>(tau.caloRecHit_ho_phi.at(i)));
+        out.caloRecHit_ho_energy.push_back(static_cast<float>(tau.caloRecHit_ho_energy.at(i)));
+        out.caloRecHit_ho_time.push_back(static_cast<float>(tau.caloRecHit_ho_time.at(i)));
+        out.caloRecHit_ho_detId.push_back(static_cast<ulong>(tau.caloRecHit_ho_detId.at(i)));
+        out.caloRecHit_ho_aux.push_back(static_cast<ulong>(tau.caloRecHit_ho_aux.at(i)));
+        out.caloRecHit_ho_flags.push_back(static_cast<ulong>(tau.caloRecHit_ho_flags.at(i)));
+      }
+        for(long unsigned int i=0; i < tau.caloRecHit_hf_rho.size() ; i++){
+        out.caloRecHit_hf_rho.push_back(static_cast<float>(tau.caloRecHit_hf_rho.at(i)));
+        out.caloRecHit_hf_eta.push_back(static_cast<float>(tau.caloRecHit_hf_eta.at(i)));
+        out.caloRecHit_hf_phi.push_back(static_cast<float>(tau.caloRecHit_hf_phi.at(i)));
+        out.caloRecHit_hf_energy.push_back(static_cast<float>(tau.caloRecHit_hf_energy.at(i)));
+        out.caloRecHit_hf_time.push_back(static_cast<float>(tau.caloRecHit_hf_time.at(i)));
+        out.caloRecHit_hf_detId.push_back(static_cast<ulong>(tau.caloRecHit_hf_detId.at(i)));
+        out.caloRecHit_hf_flags.push_back(static_cast<ulong>(tau.caloRecHit_hf_flags.at(i)));
+        out.caloRecHit_hf_timeFalling.push_back(static_cast<float>(tau.caloRecHit_hf_timeFalling.at(i)));
+        out.caloRecHit_hf_auxHF.push_back(static_cast<uint32_t>(tau.caloRecHit_hf_auxHF.at(i)));
+        out.caloRecHit_hf_aux.push_back(static_cast<ulong>(tau.caloRecHit_hf_aux.at(i)));
+      }
+      for(long unsigned int i=0; i < tau.patatrack_pt.size() ; i++){
+        out.patatrack_pt.push_back(static_cast<float>(tau.patatrack_pt.at(i)));
+        out.patatrack_eta.push_back(static_cast<float>(tau.patatrack_eta.at(i)));
+        out.patatrack_phi.push_back(static_cast<float>(tau.patatrack_phi.at(i)));
+        out.patatrack_chi2.push_back(static_cast<float>(tau.patatrack_chi2.at(i)));
+        out.patatrack_ndof.push_back(static_cast<float>(tau.patatrack_ndof.at(i)));
+        out.patatrack_charge.push_back(static_cast<int>(tau.patatrack_charge.at(i)));
+        out.patatrack_quality.push_back(static_cast<uint>(tau.patatrack_quality.at(i)));
+        out.patatrack_dxy.push_back(static_cast<float>(tau.patatrack_dxy.at(i)));
+        out.patatrack_dz.push_back(static_cast<float>(tau.patatrack_dz.at(i)));
+        out.patatrack_vertex_id.push_back(static_cast<float>(tau.patatrack_vertex_id.at(i)));
+      }
+      for(long unsigned int i=0; i < tau.patavert_z.size() ; i++){
+        out.patavert_z.push_back(static_cast<float>(tau.patavert_z.at(i)));
+        out.patavert_weight.push_back(static_cast<float>(tau.patavert_weight.at(i)));
+        out.patavert_ptv2.push_back(static_cast<float>(tau.patavert_ptv2.at(i)));
+        out.patavert_chi2.push_back(static_cast<float>(tau.patavert_chi2.at(i)));
+        out.patavert_ndof.push_back(static_cast<int>(tau.patavert_ndof.at(i)));
+      }
         outputTuple.Fill();
     }
+    #undef CP_BR
 
 
 private:

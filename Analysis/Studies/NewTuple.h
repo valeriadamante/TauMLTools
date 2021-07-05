@@ -43,9 +43,11 @@ public:
     NewTuple(const std::vector<std::string> _newTupleFile, const std::vector<std::string> _oldTupleFile);
     NewTuple(const std::vector<std::string> _newTupleFile, const std::vector<std::string> _oldTupleFile, const std::string _absolute_path);
     void SetAbsolutePath(std::string _absolute_path) {absolute_path = _absolute_path;}
+    void SetPlotDir(std::string _plotDir) {plotDir = _plotDir;}
     void SetNewTupleFile(std::vector<std::string> _newTupleFile){newTupleFile=_newTupleFile;}
     void SetOldTupleFile(std::vector<std::string> _oldTupleFile){oldTupleFile=_oldTupleFile;}
     std::string GetAbsolutePath() {return absolute_path;}
+    std::string GetPlotDir() {return plotDir;}
     std::vector<std::string> GetNewTupleFile(){return newTupleFile;}
     std::vector<std::string> GetOldTupleFile(){return oldTupleFile;}
     void ValidateFiles();
@@ -60,7 +62,7 @@ private:
   template <typename T>
   void LookAtHistogram(T Histogram);
 private:
-  std::string absolute_path;
+  std::string absolute_path, plotDir;
   std::vector<std::string> newTupleFile, oldTupleFile;
   float maximum_histogram_value, minimum_histogram_value;
   int number_of_bin;

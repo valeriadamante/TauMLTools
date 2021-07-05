@@ -4,7 +4,7 @@
 #include <boost/preprocessor/seq.hpp>
 #include <boost/preprocessor/variadic.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <ROOT/RDataFrame.hxx>
+
 #include "TauMLTools/Core/interface/program_main.h"
 #include "TauMLTools/Core/interface/AnalysisMath.h"
 #include "TauMLTools/Core/interface/RootExt.h"
@@ -87,22 +87,32 @@ private:
         //std::cout << "deltaR = " << (std::sqrt(deta * deta + dphi * dphi)) <<std::endl;
         return (std::sqrt(deta * deta + dphi * dphi));
 
-       }
+      }
+
 
       std::vector<int> ReorderByEnergy(std::vector<float>& energy){
+      //  std::cout << "sono entrato" <<std::endl;
+      //  std::cout << "dim energy = "  << energy.size()<<std::endl;
         std::vector<int> indices;
         while(indices.size()<energy.size()){
           float current_energy_value=0.;
-          int current_index =0;
+          int current_index = -100;
           for(std::vector<float>::size_type i=0; i < energy.size() ; i++){
             if(std::find(indices.begin(), indices.end(), i)!= indices.end()) continue;
             if(energy.at(i) >= current_energy_value ){
               current_energy_value = energy.at(i);
-              current_index = i;
+              current_index = static_cast<int>(i);
             }
+          //  std::cout << "current energy value == " << current_energy_value << "\t current index = " << current_index << "\t energy = " << energy.at(i) << "\t i = " << i << std::endl;
           }
-          indices.push_back(current_index);
+          if(current_index>=0){
+            indices.push_back(current_index);
+          }
         }
+        //for(auto& i : indices){
+        //  std::cout << "index = " << i << "\t energy " << energy.at(i) << "\n " ;
+        //}
+      //  std::cout << std::endl;
         return indices;
       }
       #define CP_BR(name) intermTuple().name = tau.name;
@@ -115,6 +125,8 @@ private:
         CP_BR(evt);
         CP_BR(run);
         CP_BR(lumi);
+        CP_BR(defaultDiTauPath_lastModuleIndex);
+        CP_BR(defaultDiTauPath_result);
         CP_BR(l1Tau_index);
         CP_BR(l1Tau_pt);
         CP_BR(l1Tau_eta);
@@ -132,7 +144,6 @@ private:
         CP_BR(genLepton_vis_pt);
         CP_BR(genLepton_vis_mass);
         CP_BR(genLepton_vis_phi);
-
         out.nVertices=tau.patavert_z.size();
         std::vector<bool> ecal_isEndCap;
         std::vector<float> ecal_rho;
@@ -144,7 +155,7 @@ private:
         std::vector<bool> ecal_isRecovered;
 
         for(std::vector<float>::size_type i=0; i < tau.caloRecHit_ee_energy.size() ; i++){
-          if(tau.caloRecHit_ee_energy.at(i)==0) continue;
+          if(tau.caloRecHit_ee_energy.at(i)<=0) continue;
           ecal_isEndCap.push_back(true);
           ecal_rho.push_back(tau.caloRecHit_ee_rho.at(i));
           ecal_DeltaEta.push_back(DeltaEta(tau.caloRecHit_ee_eta.at(i), tau.l1Tau_eta));
@@ -155,7 +166,7 @@ private:
           ecal_isRecovered.push_back(tau.caloRecHit_ee_isRecovered.at(i));
         }
         for(std::vector<float>::size_type i=0; i < tau.caloRecHit_eb_energy.size() ; i++){
-          if(tau.caloRecHit_eb_energy.at(i)==0) continue;
+          if(tau.caloRecHit_eb_energy.at(i)<=0) continue;
           ecal_isEndCap.push_back(false);
           ecal_rho.push_back(tau.caloRecHit_eb_rho.at(i));
           ecal_DeltaEta.push_back(DeltaEta(tau.caloRecHit_eb_eta.at(i), tau.l1Tau_eta));
@@ -177,7 +188,7 @@ private:
           out.caloRecHit_e_energy.push_back(ecal_energy.at(index));
           out.caloRecHit_e_chi2.push_back(ecal_chi2.at(index));
           out.caloRecHit_e_isRecovered.push_back(ecal_isRecovered.at(index));
-        } 
+        }
         std::vector<bool> hcal_HadronSubDet;
         std::vector<float> hcal_rho;
         std::vector<float> hcal_DeltaEta;
@@ -187,7 +198,7 @@ private:
         std::vector<float> hcal_chi2;
         std::vector<bool> hcal_time;
         for(std::vector<float>::size_type i=0; i < tau.caloRecHit_hbhe_energy.size() ; i++){
-          if(tau.caloRecHit_hbhe_energy.at(i)==0) continue;
+          if(tau.caloRecHit_hbhe_energy.at(i)<=0) continue;
           hcal_HadronSubDet.push_back(true);
           hcal_rho.push_back(tau.caloRecHit_hbhe_rho.at(i));
           hcal_DeltaEta.push_back(DeltaEta(tau.caloRecHit_hbhe_eta.at(i), tau.l1Tau_eta));
@@ -198,7 +209,7 @@ private:
           hcal_time.push_back(tau.caloRecHit_hbhe_time.at(i));
         }
         for(std::vector<float>::size_type i=0; i < tau.caloRecHit_ho_energy.size() ; i++){
-          if(tau.caloRecHit_ho_energy.at(i)==0) continue;
+          if(tau.caloRecHit_ho_energy.at(i)<=0) continue;
           hcal_HadronSubDet.push_back(false);
           hcal_rho.push_back(tau.caloRecHit_ho_rho.at(i));
           hcal_DeltaEta.push_back(DeltaEta(tau.caloRecHit_ho_eta.at(i), tau.l1Tau_eta));

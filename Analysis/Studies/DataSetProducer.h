@@ -92,6 +92,7 @@ public:
     void GetHistogramsSignalQCD(int n_var, bool use_binning);
     void GetHistogramsDataValidation(int n_var, bool use_binning);
     void QCDFilter();
+    void FromDFToTTree();
     void ProduceDataSample(std::vector<std::string> inputFile, std::string outFile_suffix);
 
 private:

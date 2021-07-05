@@ -1,9 +1,10 @@
 from  TauMLTools.Training.python.produceGridDatasets import *
+#from  produceGridDatasets import *
 import tensorflow as tf
 import root_pandas
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
+parser.add_argument('--machine', required=False, type=str, default="local", choices=["local","gridui", "cmssimphase2"]) #aggiungi pccms65
 parser.add_argument('--effRate', required= False, type=str, default = 'test', choices=['test', 'eff','rate', 'Zprime'])
 parser.add_argument('--n_max_events', required=False, type=int, default=-1, help='max number of events to be processed')
 parser.add_argument('--McTruth_file', required=False, type=str, default='MCTruth.npy', help='output file name')
@@ -35,8 +36,8 @@ params = {
     'dropout_CNN2x2_layers':0,#0.2,
     #'n_units' : len(CellGridMatrix[0,0,0]),
     'batch_size':200,
-    'train_fraction': 0.6102414433536747,
-    'validation_fraction': 0.19474661713982488,
+    'train_fraction': 0.60003292,
+    'validation_fraction': 0.19998354,
     #'learning_rate':0.002,
     'learning_rate':0.001,
     'monitor_es':'val_loss',
@@ -45,7 +46,7 @@ params = {
     'bigOrRate': 13603.37
 }
 # ***** Get cell grid Matrix *****
-kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : False, 'verbose' : args.verbose}
+kwArgs = {'n_max_events':args.n_max_events, 'n_cellsX':args.n_cellsX, 'n_cellsY':args.n_cellsY, 'timeInfo' : True, 'verbose' : args.verbose}
 CellGridMatrix = GetCellGridNormMatrix(args.machine, args.effRate, **kwArgs)
 # ***** Get MC and weights Matrices *****
 if(args.effRate== 'test'):
@@ -63,9 +64,9 @@ inFile, outFile, outFileNorm, dictFileToRead, dictFileToSave = GetDictFile(args.
 print(("max = {}").format(np.amax(CellGridMatrix)))
 print(("nan = {}").format(np.count_nonzero(np.isnan(CellGridMatrix))))
 print(CellGridMatrix.shape)
-for n in range(CellGridMatrix.shape[3]):
-  if np.count_nonzero(np.isnan(CellGridMatrix[:,:,:,n])) > 0:
-    print(n)
+#for n in range(CellGridMatrix.shape[3]):
+#  if np.count_nonzero(np.isnan(CellGridMatrix[:,:,:,n])) > 0:
+#    print(n)
 dictFileToLoad = open(dictFileToRead)
 print(("for {}").format(inFile))
 dict = json.load(dictFileToLoad)

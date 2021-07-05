@@ -1,5 +1,5 @@
 
-logfile_norm = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/cellGridStructure.log"
+logfile_norm = "/Users/valeriadamante/Desktop/Dottorato/gridui/CMSSW_11_2_1_Patatrack/src/cellGridStructure.log"
 logfile_CMSSW = "/Users/valeriadamante/Desktop/Dottorato/public/CMSSW_11_2_1_Patatrack/src/cellGridStructureCMSSW.log"
 with open(logfile_norm) as f1, open(logfile_CMSSW) as f2:
     k=0
