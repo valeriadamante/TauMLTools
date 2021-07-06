@@ -1,5 +1,5 @@
-#include "TauMLTools/Analysis/bin2/DataSetProducer.h"
-#include "TauMLTools/Analysis/bin2/DataSetProducer.C"
+#include "TauMLTools/Analysis/Studies/DataSetProducer.h"
+#include "TauMLTools/Analysis/Studies/DataSetProducer.C"
 
 
 void MergeFiles(){
@@ -26,20 +26,20 @@ void MergeFiles(){
   //dataset.ProduceDataSample(dataset.GetVBFFile(), "VBF");
   //std::cout << "VBF Finito " << std::endl;
 
-  std::vector<std::string> ZprimeToTauTau_MFile = {dataset.GetAbsolutePath()+"ZprimeToTauTau_M-4000/*.root"};
-  dataset.SetZPFile(ZprimeToTauTau_MFile);
-  dataset.ProduceDataSample(dataset.GetZPFile(), "ZPrime");
-  std::cout << "ZPrime Finito " << std::endl;
+  //std::vector<std::string> ZprimeToTauTau_MFile = {dataset.GetAbsolutePath()+"ZprimeToTauTau_M-4000/*.root"};
+  //dataset.SetZPFile(ZprimeToTauTau_MFile);
+  //dataset.ProduceDataSample(dataset.GetZPFile(), "ZPrime");
+  //std::cout << "ZPrime Finito " << std::endl;
 
   //std::vector<std::string> QCD_PtFile = {dataset.GetAbsolutePath()+"QCD_Pt-15to3000_Flat/QCD_Pt-15to3000_TuneCP5_Flat_14TeV_pythia8*.root"};
   //dataset.SetQCDFile(QCD_PtFile);
   //dataset.ProduceDataSample(dataset.GetQCDFile(), "QCD");
   //std::cout << "QCD Finito " << std::endl;
 
-  //std::vector<std::string> EphemeralHLTPhysics1File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root"};
-  //dataset.SetEph1File(EphemeralHLTPhysics1File);
-  //dataset.ProduceDataSample(dataset.GetEph1File(), "Eph1");
-  //std::cout << "Eph1 Finito " << std::endl;
+  std::vector<std::string> EphemeralHLTPhysics1File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics1/*.root"};
+  dataset.SetEph1File(EphemeralHLTPhysics1File);
+  dataset.ProduceDataSample(dataset.GetEph1File(), "Eph1");
+  std::cout << "Eph1 Finito " << std::endl;
 
   //std::vector<std::string> EphemeralHLTPhysics2File = {dataset.GetAbsolutePath()+"EphemeralHLTPhysics2/*.root"};
   //dataset.SetEph2File(EphemeralHLTPhysics2File);

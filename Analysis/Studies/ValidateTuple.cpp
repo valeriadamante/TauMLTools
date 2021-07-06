@@ -13,6 +13,6 @@ void ValidateTuple(){
 
   nt.SetOldTupleFile({nt.GetAbsolutePath()+"DataSetTraining.root"});
   nt.SetNewTupleFile({nt.GetAbsolutePath()+"miniTuple.root"});
-  nt.GetWeight("miniTuple_Data.root");
-  //nt.DrawOnlyHistos("all_Data.root");
+  nt.GetWeight("Eph1_ForWeighting.root");
+  nt.DrawOnlyHistos("Eph1_ForWeighting.root");
 }

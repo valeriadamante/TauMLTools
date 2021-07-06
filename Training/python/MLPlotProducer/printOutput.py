@@ -56,9 +56,9 @@ params = {
     'epochs':100000,
     'bigOrRate': 13603.37,
 
-    'opt_threshold_3': 0.1808643564563681,
-    'opt_threshold_4': 0.1226862631719996,
-    'opt_threshold_5': 0.08411392196831002,
+    'opt_threshold_3': 0.180858813224404,
+    'opt_threshold_4': 0.12267940863785043,
+    'opt_threshold_5': 0.08411243185219064,
 }
 # ***** Get cell grid Matrix *****
 varDict = {
@@ -147,4 +147,4 @@ for phi_idx in range(len(CellGridMatrix[i])):
 '''
 
 df = df[(df.defaultDiTauPath_lastModuleIndex>5) & (df.l1Tau_pt>=32) & ((df.l1Tau_hwIso>0) | (df.l1Tau_pt>=70))]
-print(df[(df.lumi == 136)].head(50))
+print(df[(df.lumi == 136)&(df.evt>=135000)&(df.evt<=135045)].loc[:,['evt','l1Tau_pt', 'y_predict']])

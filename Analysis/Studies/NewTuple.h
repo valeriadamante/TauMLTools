@@ -58,7 +58,7 @@ public:
     void LookAtDataHistogram();
 
 private:
-  double GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bool& genLepton_isTau, TH1D SignalHist,TH1D QCDHist,TH1D DataHist, int& n_tot_entries);
+  float GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bool& genLepton_isTau, TH1D SignalHist,TH1D QCDHist,TH1D DataHist);
   template <typename T>
   void LookAtHistogram(T Histogram);
 private:

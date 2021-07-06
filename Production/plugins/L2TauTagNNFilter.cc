@@ -633,19 +633,22 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   std::vector<tensorflow::Tensor> pred_vector;
   tensorflow::run(session_, {{inputTensorName_, cellGridMatrix}}, {outputTensorName_}, &pred_vector);
 
+  /* for debugging uncomment  following lines */
+
   for (auto& tau_idx : pt_indices){
     std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus_pt.at(tau_idx) << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
 
   }
   int n_TauPassed =0;
-  /* for debugging uncomment  following lines */
-  //for (auto& tau_idx : pt_indices){
-  //  if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
-  //  {
-  //    n_TauPassed+=1;
-  //  }
-  //}
+  for (auto& tau_idx : pt_indices){
+    if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    {
+      n_TauPassed+=1;
+    }
+  }
   if(n_TauPassed==2){
+    /* for debugging uncomment  following line */
+    std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
     result = true;
   }
 }

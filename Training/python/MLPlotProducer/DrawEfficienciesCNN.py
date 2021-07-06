@@ -52,9 +52,9 @@ params = {
     'epochs':100000,
     'bigOrRate': 13603.37,
 
-    'opt_threshold_3': 0.1808643564563681,
-    'opt_threshold_4': 0.1226862631719996,
-    'opt_threshold_5': 0.08411392196831002,
+    'opt_threshold_3': 0.180858813224404,
+    'opt_threshold_4': 0.12267940863785043,
+    'opt_threshold_5': 0.08411243185219064,
 }
 evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/"
 evtfileDir = ("{}/{}_{}").format(evtTuplePath, args.sample, args.corr)
