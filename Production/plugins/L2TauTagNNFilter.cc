@@ -641,7 +641,8 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   }
   int n_TauPassed =0;
   for (auto& tau_idx : pt_indices){
-    if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    if(pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    //if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
     {
       n_TauPassed+=1;
     }

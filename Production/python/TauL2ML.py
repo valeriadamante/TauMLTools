@@ -15,12 +15,6 @@ options.register('lumiFile', '', VarParsing.multiplicity.singleton, VarParsing.v
                  "JSON file with lumi mask.")
 options.register('eventList', '', VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  "List of events to process.")
-options.register('graphPath', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/graph_model/graph_saved_model.pb', VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "Path of the graph to use")
-options.register('normalizationDict', '/afs/cern.ch/work/v/vdamante/public/CMSSW_11_2_1_Patatrack/src/TauMLTools/Analysis/config/NormalizationDict.json', VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "give output Tensor Name.")
-options.register('rateWP', 4, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Rate on which set discriminator threshold")
 options.register('dumpPython', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
                  "Dump full config into stdout.")
 
@@ -144,10 +138,8 @@ else:
     from HLTrigger.Configuration.customizeHLTforMC import customizeHLTforMC
     process = customizeHLTforMC(process)
 
-from TauMLTools.Production.ApplyCNNL2 import update
-
-rate=("opt_threshold_{}").format(options.rateWP)
-process = update(process,options.graphPath,options.normalizationDict, rate)
+from TauMLTools.Production.ApplyCNNL2Test import update
+process = update(process)
 
 # End of customisation functions
 
