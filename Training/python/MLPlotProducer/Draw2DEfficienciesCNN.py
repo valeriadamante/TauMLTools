@@ -3,14 +3,60 @@
 
 # 1. goal = compare algo efficiency per taus (NOT per events) on testing dataset with sqrt(diagonal) of cut based (algo?) efficiency (on VBF) per event (NOT per taus) in pt bins
 
-import numpy as np
-import os
+from  TauMLTools.Training.python.produceGridDatasets import *
 import ROOT
 from array import array
 import argparse
-from  TauMLTools.Training.python.produceGridDatasets import *
 
 ROOT.gStyle.SetPaintTextFormat(".2f")
+parser = argparse.ArgumentParser()
+parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"])
+parser.add_argument('--corr', required=False, type=str, default="noCorr", choices = ["noCorr","Corr"])
+parser.add_argument('--sample', required=False, type=str, default="VBF", choices = ["Zprime","VBF"])
+parser.add_argument('--verbose', required=False, type=int, default=0)
+args = parser.parse_args()
+params = {
+    'num_dense_layers':3,
+    'num_CNN1x1_layers':4,
+    'num_CNN2x2_layers':4,
+    'activation_dense':'relu',
+    'activation_CNN1x1':'relu',
+    'activation_CNN2x2':'relu',
+    'nFilters_dense_0':40,
+    'nFilters_dense_1':40,
+    'nFilters_dense_2':20,
+    'nFilters_CNN1x1_0':80,
+    'nFilters_CNN1x1_1':60,
+    'nFilters_CNN1x1_2':40,
+    'nFilters_CNN1x1_3':20,
+    'nFilters_CNN2x2_0':20,
+    'nFilters_CNN2x2_1':20,
+    'nFilters_CNN2x2_2':20,
+    'nFilters_CNN2x2_3':40,
+    'dropout_dense_layers':0,#0.2,
+    'dropout_CNN1x1_layers':0,#0.2,
+    'dropout_CNN2x2_layers':0,#0.2,
+    #'n_units' : len(CellGridMatrix[0,0,0]),
+    'batch_size':200,
+    'train_fraction': 0.6102414433536747,
+    'validation_fraction': 0.19474661713982488,
+    #'learning_rate':0.002,
+    'learning_rate':0.001,
+    'monitor_es':'val_loss',
+    'patience_es':10,
+    'epochs':100000,
+    'bigOrRate': 13603.37,
+
+    'opt_threshold_3': 0.180858813224404,
+    'opt_threshold_4': 0.12267940863785043,
+    'opt_threshold_5': 0.08411243185219064,
+
+}
+evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/"
+evtfileDir = ("{}/{}_{}").format(evtTuplePath, args.sample, args.corr)
+CNNfileDir = ("{}/{}_CNN/").format(evtTuplePath, args.sample)
+outDir= GetOutPath(args.machine)
+plotDir = GetPlotDir(args.machine)
 
 def beautify_plot_canvas(names, save=True):
     H_ref = 1000;
@@ -130,68 +176,46 @@ names = {
     "minYRange":0,
     "maxYRange":0.99,
 }
-parser = argparse.ArgumentParser()
-parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"]) #aggiungi pccms65
-args = parser.parse_args()
-params = {
-    'num_dense_layers':3,
-    'num_CNN1x1_layers':4,
-    'num_CNN2x2_layers':4,
-    'activation_dense':'relu',
-    'activation_CNN1x1':'relu',
-    'activation_CNN2x2':'relu',
-    'nFilters_dense_0':40,
-    'nFilters_dense_1':40,
-    'nFilters_dense_2':20,
-    'nFilters_CNN1x1_0':80,
-    'nFilters_CNN1x1_1':60,
-    'nFilters_CNN1x1_2':40,
-    'nFilters_CNN1x1_3':20,
-    'nFilters_CNN2x2_0':20,
-    'nFilters_CNN2x2_1':20,
-    'nFilters_CNN2x2_2':20,
-    'nFilters_CNN2x2_3':40,
-    'dropout_dense_layers':0,#0.2,
-    'dropout_CNN1x1_layers':0,#0.2,
-    'dropout_CNN2x2_layers':0,#0.2,
-    #'n_units' : len(CellGridMatrix[0,0,0]),
-    'batch_size':200,
-    'train_fraction': 0.6102414433536747,
-    'validation_fraction': 0.19474661713982488,
-    #'learning_rate':0.002,
-    'learning_rate':0.001,
-    'monitor_es':'val_loss',
-    'patience_es':10,
-    'epochs':100000,
-    'bigOrRate': 13603.37,
 
-    'opt_threshold_3':0.1277466341834952,
-    'opt_threshold_4': 0.08153110369858041,
-    'opt_threshold_5': 0.051069704813926364,
+# *** Define all files *****
 
-}
-evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/outputs_EvtTuples/correct_efficiencies"
-outDir= GetOutPath(args.machine)
-algoEff_cb =("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
-Eff_cb =("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2.root").format(evtTuplePath)
-BOR_eff_cb = ("{}/efficiency_normal_hltL1sDoubleTauBigOR.root").format(evtTuplePath)
-eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate3kHz.root").format(outDir)
-eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate4kHz.root").format(outDir)
-eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate5kHz.root").format(outDir)
+Eff_BOR_cb =("{}/efficiency_normal_hltL1sDoubleTauBigOR_{}.root").format(evtfileDir, args.sample)
+eventTuple_BOR_file = ROOT.TFile(Eff_BOR_cb, "READ")
+
+Eff_algo_cb = ("{}/efficiency_algo_hltDoubleL2IsoTau26eta2p2_{}.root").format(evtfileDir, args.sample)
+eventTuple_file_algo = ROOT.TFile(Eff_algo_cb, "READ")
+
+Eff_abs_cb =("{}/efficiency_normal_hltDoubleL2IsoTau26eta2p2_{}.root").format(evtfileDir, args.sample)
+eventTuple_file_abs = ROOT.TFile(Eff_abs_cb, "READ")
+
+
+rate = 3
+eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
+tauTuple_file3 = ROOT.TFile(eff_CNN_3kHz, "READ")
+
+rate = 4
+eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
+tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
+
+rate = 5
+eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
+tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
+
 plotDir = GetPlotDir(args.machine)+"/"
 
+#histNum_algo_cb = ROOT.TH1D(eventTuple_file_algo.Get( "passed_algo" ) )
+#histDen_algo_cb = ROOT.TH1D(eventTuple_file_algo.Get( "total_algo" ) )
 
-
-all_files=[algoEff_cb, Eff_cb, BOR_eff_cb]#, eff_CNN_3kHz,eff_CNN_4kHz,eff_CNN_5kHz]
+all_files=[Eff_algo_cb, Eff_abs_cb, Eff_BOR_cb, eff_CNN_3kHz,eff_CNN_4kHz,eff_CNN_5kHz]
 x_y_titles = ["gen #tau_{1} p_{T} (GeV)", "gen #tau_{2} p_{T} (GeV)"]
 
 
-histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ]
-histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency"]
-output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency" ]
-#histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ["passed", "total"],["passed", "total"],["passed", "total"]]
-#histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency", "Algorithmic CNN Efficiency","Algorithmic CNN Efficiency","Algorithmic CNN Efficiency"]
-#output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency", "CNN3_algorithmic_efficiency","CNN3_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency" ]
+#histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ]
+#histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency"]
+#output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency" ]
+histogram_names = [["efficiency_algo"], ["efficiency_normal"], ["efficiency_normal"], ["passed", "total"],["passed", "total"],["passed", "total"]]
+histogram_titles = ["Algorithmic L2 Efficiency", "Absolute L2 Efficiency ", "Absolute L1 Efficiency", "Algorithmic CNN Efficiency","Algorithmic CNN Efficiency","Algorithmic CNN Efficiency"]
+output_files = ["L2_algorithmic_efficiency","L2_absolute_efficiency", "L1_absolute_efficiency", "CNN3_algorithmic_efficiency","CNN3_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency",  "CNN4_algorithmic_efficiency","CNN4_absolute_efficiency" ]
 
 for i in range(0, len(all_files)):
     names["inFile"]= all_files[i]
@@ -235,7 +259,7 @@ for i in range(0, len(all_files)):
     names["minYRange"]=0.8
     beautify_plot_canvas(names)
 
-x_y_titles = ["gen #tau_{1} p_{T} (GeV)", "gen #tau_{2} p_{T} (GeV)"]
+x_y_titles = ["gen #tau_{1} p_{fT} (GeV)", "gen #tau_{2} p_{T} (GeV)"]
 names["minYRange"]=0.
 names["histogram"]= ["passed"]
 names["histogramTitle"]= "Absolute CNN Efficiency"

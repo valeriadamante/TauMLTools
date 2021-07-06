@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from HLTrigger.Configuration.customizeHLTforPatatrack import customizeHLTforPatatrackTriplets
 from TauMLTools.Production.l2TauNNTag_cfi import *
 
-def update(process, ):
+def update(process):
     thWp = {
         'opt_threshold_3': 0.180858813224404,
         'opt_threshold_4': 0.12267940863785043,
