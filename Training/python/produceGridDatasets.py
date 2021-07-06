@@ -170,7 +170,7 @@ def GetRootPath(machine, effRate):
     elif(effRate=='rate'):
         inFile_name = 'miniTuple_Data.root'
     elif(effRate=='Zprime'):
-        inFile_name = 'miniTuple_Zprime.root'
+        inFile_name = 'miniTuple_ZP.root'
     inFile = absolute_path+inFile_name
     return inFile
 

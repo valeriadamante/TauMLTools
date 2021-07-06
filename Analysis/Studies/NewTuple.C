@@ -59,9 +59,9 @@ void NewTuple::LookAtHistogram(T Histogram){
   std::cout << "nentries tot = " << j << std::endl;
 }
 
-double NewTuple::GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bool& genLepton_isTau, TH1D SignalHist,TH1D QCDHist,TH1D DataHist, int& n_tot_entries){
-  double weight =1.;
-  if(genLepton_isTau==false){
+float NewTuple::GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bool& genLepton_isTau, TH1D SignalHist,TH1D QCDHist,TH1D DataHist){
+  float weight =1.;
+  if(genLepton_isTau==0){
     for (int i=1; i<= QCDHist.GetNbinsX(); ++i){
       if(QCDHist.GetBinContent(i)==0 ){
         std::cout << "QCDHist bin bin on 0 content: min =  " <<  QCDHist.GetBinLowEdge(i) << " max = " << QCDHist.GetBinLowEdge(i+1) << std::endl;
@@ -71,7 +71,7 @@ double NewTuple::GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bo
       }
       if(l1Tau_pt >= QCDHist.GetBinLowEdge(i) && l1Tau_pt<QCDHist.GetBinLowEdge(i+1)){
           //weight = (1./QCDHist.GetBinContent(i))*(n_tot_entries/(2.*QCDHist.GetNbinsX())); // to get an uniform
-          weight = ((double)DataHist.GetBinContent(i)/QCDHist.GetBinContent(i))*(n_tot_entries/(2.*DataHist.Integral(1,DataHist.GetNbinsX())));
+          weight = (DataHist.GetBinContent(i)/QCDHist.GetBinContent(i))*(QCDHist.Integral(1,QCDHist.GetNbinsX())/DataHist.Integral(1,DataHist.GetNbinsX())) ;
         }
       }
     }
@@ -81,7 +81,7 @@ double NewTuple::GetWeightFromHisto(float& l1Tau_pt, float& genLepton_vis_pt, bo
         std::cout << "bin con 0 content: min =  " <<  SignalHist.GetBinLowEdge(i) << " max = " << SignalHist.GetBinLowEdge(i+1) << std::endl;
       }
       if(genLepton_vis_pt >= SignalHist.GetBinLowEdge(i) && genLepton_vis_pt<SignalHist.GetBinLowEdge(i+1) ){
-        weight = (1./(double)SignalHist.GetBinContent(i))*((double)n_tot_entries/(2.*(double)SignalHist.GetNbinsX()));
+        weight = (1./SignalHist.GetBinContent(i))*(SignalHist.Integral(1,SignalHist.GetNbinsX())/(SignalHist.GetNbinsX()));
       }
     }
   }
@@ -95,25 +95,9 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   /* open DataFrames */
   ROOT::RDataFrame dfNew("L2TauTrainTuple", newTupleFile); // MC
   ROOT::RDataFrame dfData(dataTupleName, absolute_path+dataFileName); // Data
-  /*
-  ROOT::RDataFrame dfData2(dataTupleName, absolute_path+dataFileName); // Data
 
-  // require data to have l1Taus with pt and iso cuts *
-  auto l1TauPtCutsNew =[](ROOT::VecOps::RVec<float> &l1Tau_pt, ROOT::VecOps::RVec<int> &l1Tau_hwIso){
-    ROOT::VecOps::RVec<float> l1Tau_pt_Cut;
-    for(ROOT::VecOps::RVec<float>::size_type k = 0; k < l1Tau_pt.size(); k++){
-        if( l1Tau_pt.at(k) >= 32.  && (l1Tau_hwIso.at(k) > 0 || l1Tau_pt.at(k) >= 70.)) {
-          l1Tau_pt_Cut.push_back(l1Tau_pt.at(k) );
-        }
-     }
-     return l1Tau_pt_Cut;
-    };
-    */
-
-  /* Define dataframes for Data with l1taus with pt cut, signal and background */
-  //auto dfData = dfData2.Define("l1Tau_pt_Cut", l1TauPtCutsNew, {"l1Tau_pt", "l1Tau_hwIso"});*/
-  auto dfSignals = dfNew.Filter("genLepton_isTau==true");
-  auto dfQCD = dfNew.Filter("genLepton_isTau==false");
+  auto dfSignals = dfNew.Filter("genLepton_isTau==1");
+  auto dfQCD = dfNew.Filter("genLepton_isTau==0");
 
   /* static binning, no more needed but I keep it for MC histogram */
   minimum_histogram_value = 15.;
@@ -150,58 +134,10 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   LookAtHistogram(DataHistToLookAt);
   auto DataHist = *DataHistToLookAt;
 
-  /* Draw all histograms before reweighting */
-  // 1. signal histogram
-  TCanvas c1("c1", "c1", 10000,10000);
-  SignalHist.GetXaxis()->SetTitle(("gen #tau p_{T} (GeV)"));
-  SignalHist.GetYaxis()->SetTitle("A.U.");
-  SignalHist.SetStats(0);
-  //SignalHist.SetFillColorAlpha(kBlue, 0.35);
-  SignalHist.SetLineColor(kBlue);
-  SignalHist.Draw("HIST");
-  c1.SaveAs((plotDir+"Reweighing/SignalHistBefore.pdf").c_str());
-
-  // 2. qcd histogam
-  TCanvas c2("c2", "c2", 10000,10000);
-  QCDHist.GetXaxis()->SetTitle(("L1 #tau p_{T} (GeV)"));
-  QCDHist.GetYaxis()->SetTitle("A.U.");
-  QCDHist.SetStats(0);
-  QCDHist.Scale(1/QCDHist.GetEntries());
-  //QCDHist.SetFillColorAlpha(kBlue, 0.35);
-  QCDHist.SetLineColor(kBlue);
-  QCDHist.Draw("HIST");
-  c2.SaveAs((plotDir+"Reweighing/QCDHistBefore.pdf").c_str());
-  // 3. data histogram
-  TCanvas c3("c3", "c3", 10000,10000);
-  DataHist.GetXaxis()->SetTitle(("L1 #tau p_{T}"));
-  DataHist.GetYaxis()->SetTitle("A.U.");
-  DataHist.SetStats(0);
-  DataHist.Scale(1/DataHist.GetEntries());
-  //DataHist.SetFillColorAlpha(kRed, 0.35);
-  DataHist.SetLineColor(kRed);
-  DataHist.Draw("HIST");
-  c3.SaveAs((plotDir+"Reweighing/DataHistBefore.pdf").c_str());
-  /* draw superimposed data/qcd hists before reweighting*/
-  TCanvas c3_1("c3_1", "c3_1", 10000,10000);
-  TLegend *legend = new TLegend(0.74812, 0.820741, 0.901, 0.902 );
-  QCDHist.SetStats(0);
-  DataHist.SetStats(0);
-  legend->AddEntry(&QCDHist, "QCD", "l");
-  legend->AddEntry(&DataHist, "Data", "l");
-  if(DataHist.GetBinContent(DataHist.GetMaximumBin()) > QCDHist.GetBinContent(QCDHist.GetMaximumBin()) ){
-    DataHist.Draw("HIST");
-    QCDHist.Draw("HIST SAME");
-  }
-  else{
-    QCDHist.Draw("HIST");
-    DataHist.Draw("HIST SAME");
-  }
-  legend->Draw("SAME");
-  c3_1.SaveAs((plotDir+"Reweighing/QCDDataHistBefore.pdf").c_str());
 
   /* define lambda function to get weights from histograms */
   auto GetWeightFromHistos = [&](float &L1Pt, float& genLepton_vis_pt, bool &genLepton_isTau){
-    return GetWeightFromHisto(L1Pt, genLepton_vis_pt, genLepton_isTau, SignalHist, QCDHist, DataHist, n_tot_entries);
+    return GetWeightFromHisto(L1Pt, genLepton_vis_pt, genLepton_isTau, SignalHist, QCDHist, DataHist);
   };
 
 
@@ -216,8 +152,8 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   std::cout << "all entries = " << n_tot_entries << std::endl;
   std::cout << "all entries/2 = " << static_cast<float>(n_tot_entries)/2. << std::endl;
   std::cout << "all weights' sum " << *dfDataSetWeight.Sum("weight")<<std::endl;
-  std::cout << "sig weights' sum " << *dfDataSetWeight.Filter("genLepton_isTau==true").Sum("weight")<<std::endl;
-  std::cout << "qcd weights' sum " << *dfDataSetWeight.Filter("genLepton_isTau==false").Sum("weight")<<std::endl;
+  std::cout << "sig weights' sum " << *dfDataSetWeight.Filter("genLepton_isTau==1").Sum("weight")<<std::endl;
+  std::cout << "qcd weights' sum " << *dfDataSetWeight.Filter("genLepton_isTau==0").Sum("weight")<<std::endl;
 
   std::cout << "all weights " << std::endl;
   std::cout << dfDataSetWeight.Max("weight").GetValue() << std::endl;
@@ -226,63 +162,16 @@ void NewTuple::GetWeight(std::string dataFileName, std::string dataTupleName="L2
   std:: cout << dfDataSetWeight.Max("weight").GetValue() /dfDataSetWeight.Min("weight").GetValue() << std::endl;
 
   std::cout << "signal weights " << std::endl;
-  std::cout << dfDataSetWeight.Filter("genLepton_isTau==true").Max("weight").GetValue() << std::endl;
-  std::cout << dfDataSetWeight.Filter("genLepton_isTau==true").Min("weight").GetValue() << std::endl;
+  std::cout << dfDataSetWeight.Filter("genLepton_isTau==1").Max("weight").GetValue() << std::endl;
+  std::cout << dfDataSetWeight.Filter("genLepton_isTau==1").Min("weight").GetValue() << std::endl;
   std::cout << "ratio signal weights " << std::endl;
-  std::cout << dfDataSetWeight.Filter("genLepton_isTau==true").Max("weight").GetValue()/ dfDataSetWeight.Filter("genLepton_isTau==true").Min("weight").GetValue() << std::endl;
+  std::cout << dfDataSetWeight.Filter("genLepton_isTau==1").Max("weight").GetValue()/ dfDataSetWeight.Filter("genLepton_isTau==1").Min("weight").GetValue() << std::endl;
 
   std::cout << "QCD weights " << std::endl;
-  std::cout << dfDataSetWeight.Filter("genLepton_isTau==false").Max("weight").GetValue() << std::endl;
-  std::cout << dfDataSetWeight.Filter("genLepton_isTau==false").Min("weight").GetValue() << std::endl;
+  std::cout << dfDataSetWeight.Filter("genLepton_isTau==0").Max("weight").GetValue() << std::endl;
+  std::cout << dfDataSetWeight.Filter("genLepton_isTau==0").Min("weight").GetValue() << std::endl;
   std::cout << "ratio qcd weights " << std::endl;
-  std:: cout << dfDataSetWeight.Filter("genLepton_isTau==false").Max("weight").GetValue()/ dfDataSetWeight.Filter("genLepton_isTau==false").Min("weight").GetValue() << std::endl;
-
-  /* draw histograms after reweighting*/
-  auto WeightedSignalHist = dfDataSetWeight.Filter("genLepton_isTau==true").Histo1D({"","",binnum, SignalBins}, "genLepton_vis_pt", "weight");
-  auto WeightedQCDHist = dfDataSetWeight.Filter("genLepton_isTau==false").Histo1D({"","",binnum_b, BckgBins},"l1Tau_pt", "weight");
-
-  // 1. signal
-  auto hWeightedSignalHist = *WeightedSignalHist;
-  auto hWeightedQCDHist = *WeightedQCDHist;
-  TCanvas c4("c4", "c4", 10000,10000);
-  hWeightedSignalHist.GetXaxis()->SetTitle(("gen #tau p_{T} (GeV)"));
-  hWeightedSignalHist.GetYaxis()->SetTitle("A.U.");
-  hWeightedSignalHist.SetStats(0);
-  //hWeightedSignalHist.SetFillColorAlpha(kBlue, 0.35);
-  hWeightedSignalHist.SetLineColor(kBlue);
-  hWeightedSignalHist.Draw("EHIST");
-  c4.SaveAs((plotDir+"Reweighing/WeightedSignalHist.pdf").c_str());
-
-  // 2. background
-  TCanvas c5("c5", "c5", 10000,10000);
-  hWeightedQCDHist.GetXaxis()->SetTitle(("L1 #tau p_{T}"));
-  hWeightedQCDHist.GetYaxis()->SetTitle("A.U.");
-  hWeightedQCDHist.SetStats(0);
-  //hWeightedQCDHist.SetFillColorAlpha(kBlue, 0.35);
-  hWeightedQCDHist.Scale(1/hWeightedQCDHist.GetEntries());
-  hWeightedQCDHist.SetLineColor(kBlue);
-  hWeightedQCDHist.Draw("HIST");
-  c5.SaveAs((plotDir+"Reweighing/WeightedQCDHist.pdf").c_str());
-
-  //3. data
-  TCanvas c6("c6", "c6", 10000,10000);
-  TLegend *legend2 = new TLegend(0.74812, 0.820741, 0.901003, 0.902222 );
-  hWeightedQCDHist.SetStats(0);
-  hWeightedQCDHist.Scale(1/hWeightedQCDHist.GetEntries());
-  DataHist.SetStats(0);
-  legend2->AddEntry(&hWeightedQCDHist, "QCD", "l");
-  legend2->AddEntry(&DataHist, "Data", "l");
-  if(DataHist.GetBinContent(DataHist.GetMaximumBin()) > hWeightedQCDHist.GetBinContent(hWeightedQCDHist.GetMaximumBin()) ){
-    DataHist.Draw("HIST");
-    hWeightedQCDHist.Draw("HIST SAME");
-  }
-  else{
-    hWeightedQCDHist.Draw("HIST");
-    DataHist.Draw("HIST SAME");
-  }
-  legend2->Draw("SAME");
-
-  c6.SaveAs((plotDir+"Reweighing/WeightedQCDDataHist.pdf").c_str());
+  std:: cout << dfDataSetWeight.Filter("genLepton_isTau==0").Max("weight").GetValue()/ dfDataSetWeight.Filter("genLepton_isTau==0").Min("weight").GetValue() << std::endl;
 }
 
 
@@ -295,8 +184,8 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
   ROOT::RDataFrame dfDataSetWeight("L2TauTrainTuple", absolute_path+"DataSetTrainingWeight.root");
 
 
-  auto dfSignals = dfNew.Filter("genLepton_isTau==true");
-  auto dfQCD = dfNew.Filter("genLepton_isTau==false");
+  auto dfSignals = dfNew.Filter("genLepton_isTau==1");
+  auto dfQCD = dfNew.Filter("genLepton_isTau==0");
 
   /* static binning, no more needed but I keep it for MC histogram */
   minimum_histogram_value = 15.;
@@ -384,8 +273,8 @@ void NewTuple::DrawOnlyHistos(std::string dataFileName, std::string dataTupleNam
 
 
   /* draw histograms after reweighting*/
-  auto WeightedSignalHist = dfDataSetWeight.Filter("genLepton_isTau==true").Histo1D({"","",binnum, SignalBins}, "genLepton_vis_pt", "weight");
-  auto WeightedQCDHist = dfDataSetWeight.Filter("genLepton_isTau==false").Histo1D({"","",binnum_b, BckgBins},"l1Tau_pt", "weight");
+  auto WeightedSignalHist = dfDataSetWeight.Filter("genLepton_isTau==1").Histo1D({"","",binnum, SignalBins}, "genLepton_vis_pt", "weight");
+  auto WeightedQCDHist = dfDataSetWeight.Filter("genLepton_isTau==0").Histo1D({"","",binnum_b, BckgBins},"l1Tau_pt", "weight");
 
 
   // 1. signal
