@@ -17,6 +17,8 @@ Filter for L2 hadronic tau selection
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "DataFormats/Common/interface/Handle.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 // utilities
@@ -54,7 +56,10 @@ Filter for L2 hadronic tau selection
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 // L1 Tau
+#include "DataFormats/HLTReco/interface/TriggerTypeDefs.h"
+#include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
 #include "DataFormats/L1Trigger/interface/Tau.h"
+
 namespace pt = boost::property_tree;
 enum NNInputs {
   nVertices = 0,
@@ -156,13 +161,14 @@ private:
   void initializeTensor(tensorflow::Tensor& tensor);
   void checknan(tensorflow::Tensor& tensor, bool printoutTensor);
   void standardizeTensor(tensorflow::Tensor& tensor, std::string normDictPath);
-  void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauBxCollection& l1Taus, int evt_id,bool &result);
+  void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result);
   bool filter(edm::Event& event, const edm::EventSetup& eventsetup) ;
   void endJob() ;
 
 private:
   std::string processName;
-  edm::EDGetTokenT<l1t::TauBxCollection> l1Taus_token;
+  //edm::EDGetTokenT<l1t::TauBxCollection> l1Taus_token;
+  const edm::EDGetTokenT<trigger::TriggerFilterObjectWithRefs> tauTrigger;
   edm::EDGetTokenT<HBHERecHitCollection> hbhe_token;
   edm::EDGetTokenT<HORecHitCollection> ho_token;
   std::vector<edm::InputTag> ecalLabels;
@@ -205,7 +211,8 @@ void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
   // defining this function will lead to a *_cfi file being generated when compiling
   edm::ParameterSetDescription desc;
   desc.add<std::string>("processName");
-  desc.add<edm::InputTag>("l1taus");
+  desc.add<edm::InputTag>("L1TauTrigger");
+  //desc.add<edm::InputTag>("l1taus");
   desc.add<edm::InputTag>("hbheInput");
   desc.add<edm::InputTag>("hoInput");
   desc.add<std::vector<edm::InputTag> >("ecalInputs");
@@ -220,7 +227,8 @@ void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
 
 L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData):
       processName(cfg.getParameter<std::string>("processName")),
-      l1Taus_token(consumes<l1t::TauBxCollection>(cfg.getParameter<edm::InputTag>("l1taus"))),
+      tauTrigger(consumes<trigger::TriggerFilterObjectWithRefs>(cfg.getParameter<edm::InputTag>("L1TauTrigger"))),
+      //l1Taus_token(consumes<l1t::TauBxCollection>(cfg.getParameter<edm::InputTag>("l1taus"))),
       hbhe_token(consumes<HBHERecHitCollection>(cfg.getParameter<edm::InputTag>("hbheInput"))),
       ho_token(consumes<HORecHitCollection>(cfg.getParameter<edm::InputTag>("hoInput"))),
       ecalLabels(cfg.getParameter<std::vector<edm::InputTag> >("ecalInputs")),
@@ -375,7 +383,7 @@ void L2TauNNTag::standardizeTensor(tensorflow::Tensor& tensor, std::string normD
     }
   }
 }
-void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauBxCollection& l1Taus, int evt_id,bool &result){
+void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result){
 
   float dR_max = 0.5;
   int nCellEta = 5;
@@ -388,11 +396,12 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   std::vector<float> l1Taus_eta;
   std::vector<float> l1Taus_phi;
   std::vector<float> l1Taus_hwIso;
-  for(auto iter = l1Taus.begin(0); iter != l1Taus.end(0); ++iter) {
-    l1Taus_pt.push_back(static_cast<float>(iter->polarP4().pt()));
-    l1Taus_eta.push_back(static_cast<float>(iter->polarP4().eta()));
-    l1Taus_phi.push_back(static_cast<float>(iter->polarP4().phi()));
-    l1Taus_hwIso.push_back(static_cast<float>(iter->hwIso()));
+
+  for (unsigned int iL1Tau = 0; iL1Tau < l1Taus.size(); iL1Tau++) {
+    l1Taus_pt.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().pt()));
+    l1Taus_eta.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().eta()));
+    l1Taus_phi.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().phi()));
+    l1Taus_hwIso.push_back(static_cast<float>(l1Taus[iL1Tau]->hwIso()));
   }
 
   std::vector<int> pt_indices=ReorderByEnergy(l1Taus_pt);
@@ -635,13 +644,13 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
   /* for debugging uncomment  following lines */
 
-  for (auto& tau_idx : pt_indices){
-    std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus_pt.at(tau_idx) << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
-
-  }
+  //for (auto& tau_idx : pt_indices){
+  //  std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus_pt.at(tau_idx) << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
+  //}
   int n_TauPassed =0;
   for (auto& tau_idx : pt_indices){
-    if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    if(pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    //if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
     {
       n_TauPassed+=1;
     }
@@ -654,8 +663,17 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 }
 bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
   bool result = false;
+  edm::Handle<trigger::TriggerFilterObjectWithRefs> l1TriggeredTaus;
+  event.getByToken(tauTrigger, l1TriggeredTaus);
+
+  l1t::TauVectorRef l1TausRef;
+  l1TriggeredTaus->getObjects(trigger::TriggerL1Tau, l1TausRef);
+  /*
+  l1t::TauBxCollection l1Taus;
+  l1Taus = *l1TausRef;
+
   edm::Handle<l1t::TauBxCollection> l1Taus;
-  event.getByToken(l1Taus_token, l1Taus);
+  event.getByToken(l1Taus_token, l1Taus);*/
   edm::Handle<EcalRecHitCollection> ebHandle;
   edm::Handle<EcalRecHitCollection> eeHandle;
   for (std::vector<edm::EDGetTokenT<EcalRecHitCollection> >::const_iterator i = ecal_tokens.begin(); i != ecal_tokens.end(); i++) {
@@ -692,7 +710,8 @@ bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
   caloRecHits.Geometry = &*Geometry;
   int evt_id = event.id().event();
 
-  FindObjectsAroundL1Tau(caloRecHits, *pataTracks, *pataVertices,*l1Taus,evt_id,result);
+
+  FindObjectsAroundL1Tau(caloRecHits, *pataTracks, *pataVertices, l1TausRef,evt_id,result);
   /* uncomment following lines for debugging */
   if (result == true){
     std::cout << "event passed == " << evt_id << std::endl;
