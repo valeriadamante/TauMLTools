@@ -2,17 +2,13 @@
 # how to build this algorithm:
 
 # 1. goal = compare algo efficiency per taus (NOT per events) on testing dataset with sqrt(diagonal) of cut based (algo?) efficiency (on VBF) per event (NOT per taus) in pt bins
-from sklearn.metrics import classification_report, roc_auc_score,roc_curve, auc, accuracy_score, f1_score, confusion_matrix
+
 from  TauMLTools.Training.python.produceGridDatasets import *
-import tensorflow as tf
-import root_pandas
-import pandas as pd
-import numpy as np
+import argparse
 import scipy
 import statsmodels.stats.proportion as ssp
-import argparse
 import ROOT
-from array import array
+
 ROOT.gStyle.SetPaintTextFormat(".2f")
 parser = argparse.ArgumentParser()
 parser.add_argument('--machine', required=False, type=str, default="local", choices=["local", "cmssimphase2"])
@@ -52,19 +48,16 @@ params = {
     'epochs':100000,
     'bigOrRate': 13603.37,
 
-    'opt_threshold_3': 0.1808643564563681,
-    'opt_threshold_4': 0.1226862631719996,
-    'opt_threshold_5': 0.08411392196831002,
+    'opt_threshold_3': 0.180858813224404,
+    'opt_threshold_4': 0.12267940863785043,
+    'opt_threshold_5': 0.08411243185219064,
 }
 evtTuplePath = "/Users/valeriadamante/Desktop/Dottorato/cmssimphase2/"
 evtfileDir = ("{}/{}_{}").format(evtTuplePath, args.sample, args.corr)
 CNNfileDir = ("{}/{}_CNN/").format(evtTuplePath, args.sample)
-
-
-
 outDir= GetOutPath(args.machine)
 plotDir = GetPlotDir(args.machine)
-ROOT.gStyle.SetPaintTextFormat(".2f")
+
 def beautify_plot_canvas(histNum_cb, histDen_cb, histNum_cnn3, histDen_cnn3, histNum_cnn4,histDen_cnn4,histNum_cnn5, histDen_cnn5, names):
     H_ref = 1000;
     W_ref = 1000;
@@ -243,13 +236,13 @@ histNum_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "passed_d" ) )
 histDen_cnn3 = ROOT.TH1D(tauTuple_file3.Get( "total_d") )
 
 rate = 4
-eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
+eff_CNN_4kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
 tauTuple_file4 = ROOT.TFile(eff_CNN_4kHz, "READ")
 histNum_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "passed_d" ) )
 histDen_cnn4 = ROOT.TH1D(tauTuple_file4.Get( "total_d") )
 
 rate = 5
-eff_CNN_3kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
+eff_CNN_5kHz = ("{}/EfficienciesCNN_forRate{}kHz.root").format(GetRateDir(args.machine,rate), rate)
 tauTuple_file5 = ROOT.TFile(eff_CNN_5kHz, "READ")
 histNum_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "passed_d" ) )
 histDen_cnn5 = ROOT.TH1D(tauTuple_file5.Get( "total_d") )
