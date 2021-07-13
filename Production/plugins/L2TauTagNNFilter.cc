@@ -6,13 +6,10 @@ Filter for L2 hadronic tau selection
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <Math/VectorUtil.h>
-#include <boost/preprocessor/seq.hpp>
-#include <boost/preprocessor/variadic.hpp>
 #include <boost/math/constants/constants.hpp>
 #include "Compression.h"
 // user include files
 #include "FWCore/Framework/interface/stream/EDFilter.h"
-//#include "FWCore/Framework/interface/EDFilter.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -58,7 +55,7 @@ Filter for L2 hadronic tau selection
 // L1 Tau
 #include "DataFormats/HLTReco/interface/TriggerTypeDefs.h"
 #include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
-#include "DataFormats/L1Trigger/interface/Tau.h"
+
 
 namespace pt = boost::property_tree;
 enum NNInputs {
@@ -142,6 +139,12 @@ public:
     const EcalRecHitCollection *ee;
     const CaloGeometry *Geometry;
   };
+  struct normDictElement{
+    float mean;
+    float std;
+    float min;
+    float max;
+  };
   explicit L2TauNNTag(const edm::ParameterSet&, const CacheData*);
   ~L2TauNNTag() override {}
   static void fillDescriptions(edm::ConfigurationDescriptions&);
@@ -156,18 +159,18 @@ private:
   float DeltaPhi(Float_t phi1, Float_t phi2);
   float DeltaEta(Float_t eta1, Float_t eta2) ;
   float DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2);
-  std::vector<int> ReorderByEnergy(std::vector<float>& energy);
+  std::vector<int> ReorderL1TauPt( const l1t::TauVectorRef& l1Taus);
   int FindVertexIndex(const reco::VertexCollection& vertices, const reco::Track& track);
   void initializeTensor(tensorflow::Tensor& tensor);
   void checknan(tensorflow::Tensor& tensor, bool printoutTensor);
-  void standardizeTensor(tensorflow::Tensor& tensor, std::string normDictPath);
+  void standardizeTensor(tensorflow::Tensor& tensor);
   void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result);
   bool filter(edm::Event& event, const edm::EventSetup& eventsetup) ;
   void endJob() ;
 
 private:
+  int debugLevel;
   std::string processName;
-  //edm::EDGetTokenT<l1t::TauBxCollection> l1Taus_token;
   const edm::EDGetTokenT<trigger::TriggerFilterObjectWithRefs> tauTrigger;
   edm::EDGetTokenT<HBHERecHitCollection> hbhe_token;
   edm::EDGetTokenT<HORecHitCollection> ho_token;
@@ -182,6 +185,7 @@ private:
   std::string inputTensorName_;
   std::string outputTensorName_;
   tensorflow::Session* session_;
+  std::map<int, normDictElement> normMap;
 
 };
 
@@ -210,6 +214,7 @@ void L2TauNNTag::globalEndJob(const CacheData* cacheData) {
 void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   // defining this function will lead to a *_cfi file being generated when compiling
   edm::ParameterSetDescription desc;
+  desc.add<int>("debugLevel");
   desc.add<std::string>("processName");
   desc.add<edm::InputTag>("L1TauTrigger");
   //desc.add<edm::InputTag>("l1taus");
@@ -226,9 +231,9 @@ void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
 
 
 L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData):
+      debugLevel(cfg.getParameter<int>("debugLevel")),
       processName(cfg.getParameter<std::string>("processName")),
       tauTrigger(consumes<trigger::TriggerFilterObjectWithRefs>(cfg.getParameter<edm::InputTag>("L1TauTrigger"))),
-      //l1Taus_token(consumes<l1t::TauBxCollection>(cfg.getParameter<edm::InputTag>("l1taus"))),
       hbhe_token(consumes<HBHERecHitCollection>(cfg.getParameter<edm::InputTag>("hbheInput"))),
       ho_token(consumes<HORecHitCollection>(cfg.getParameter<edm::InputTag>("hoInput"))),
       ecalLabels(cfg.getParameter<std::vector<edm::InputTag> >("ecalInputs")),
@@ -245,6 +250,20 @@ L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData)
         const unsigned nLabels = ecalLabels.size();
         for (unsigned i = 0; i != nLabels; i++)
           ecal_tokens.push_back(consumes<EcalRecHitCollection>(ecalLabels[i]));
+        /* load normalization map */
+        pt::ptree loadPtreeRoot;
+        pt::read_json(normalizationDict_, loadPtreeRoot);
+
+        for (auto& [key, val] : varNameMap){
+          pt::ptree var = loadPtreeRoot.get_child(val);
+          normDictElement current_element;
+          current_element.mean = var.get_child("mean").get_value<float>();
+          current_element.std =var.get_child("std").get_value<float>();
+          current_element.min =var.get_child("min").get_value<float>();
+          current_element.max =var.get_child("max").get_value<float>();
+          normMap.insert(std::pair<int,normDictElement>(key, current_element));
+        }
+
       }
 
 void L2TauNNTag::beginJob() {}
@@ -281,15 +300,19 @@ float L2TauNNTag::DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2) {
   return (std::sqrt(deta * deta + dphi * dphi));
 
 }
-std::vector<int> L2TauNNTag::ReorderByEnergy(std::vector<float>& energy){
+std::vector<int> L2TauNNTag::ReorderL1TauPt(const l1t::TauVectorRef& l1Taus){
+    std::vector<float> l1Tau_pt;
+    for (unsigned int iL1Tau = 0; iL1Tau < l1Taus.size(); iL1Tau++) {
+      l1Tau_pt.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().pt()));
+    }
     std::vector<int> indices;
-    while(indices.size()<energy.size()){
-      float current_energy_value=0.;
+    while(indices.size()<l1Tau_pt.size()){
+      float current_l1Tau_pt_value=0.;
       int current_index = -100;
-      for(std::vector<float>::size_type i=0; i < energy.size() ; i++){
+      for(std::vector<float>::size_type i=0; i < l1Tau_pt.size() ; i++){
         if(std::find(indices.begin(), indices.end(), i)!= indices.end()) continue;
-        if(energy.at(i) >= current_energy_value ){
-          current_energy_value = energy.at(i);
+        if(l1Tau_pt.at(i) >= current_l1Tau_pt_value ){
+          current_l1Tau_pt_value = l1Tau_pt.at(i);
           current_index = static_cast<int>(i);
         }
       }
@@ -341,7 +364,7 @@ void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor){
       }
     }
   }
-  if(printoutTensor){ /* this is only for debugging */
+  if(printoutTensor ){ /* this is only for debugging */
     for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
       for(int phi_idx =0; phi_idx < tensor_shape.at(1); phi_idx++){
         for(int eta_idx =0; eta_idx < tensor_shape.at(2); eta_idx++){
@@ -356,19 +379,16 @@ void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor){
     }
   }
 }
-void L2TauNNTag::standardizeTensor(tensorflow::Tensor& tensor, std::string normDictPath){
-  pt::ptree loadPtreeRoot;
-  pt::read_json(normDictPath, loadPtreeRoot);
+void L2TauNNTag::standardizeTensor(tensorflow::Tensor& tensor){
   std::vector<int> tensor_shape = get_tensor_shape(tensor);
   for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
     for(int  phi_idx=0; phi_idx < tensor_shape.at(1); phi_idx++){
       for(int eta_idx =0; eta_idx < tensor_shape.at(2); eta_idx++){
         for(int var_idx =0; var_idx < tensor_shape.at(3); var_idx++){
-          pt::ptree var = loadPtreeRoot.get_child(varNameMap.at(var_idx));
-          float mean = var.get_child("mean").get_value<float>();
-          float std =var.get_child("std").get_value<float>();
-          float min =var.get_child("min").get_value<float>();
-          float max =var.get_child("max").get_value<float>();
+          float mean = normMap.at(var_idx).mean;
+          float std = normMap.at(var_idx).std;
+          float min = normMap.at(var_idx).min;
+          float max = normMap.at(var_idx).max;
           float nonstd_var = tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx);
           float std_var = static_cast<float>((nonstd_var-mean)/std);
           if(std_var > max ){
@@ -392,19 +412,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   float dEta_width = 2*dR_max/static_cast<float>(nCellEta);
   float dPhi_width = 2*dR_max/static_cast<float>(nCellPhi);
 
-  std::vector<float> l1Taus_pt;
-  std::vector<float> l1Taus_eta;
-  std::vector<float> l1Taus_phi;
-  std::vector<float> l1Taus_hwIso;
-
-  for (unsigned int iL1Tau = 0; iL1Tau < l1Taus.size(); iL1Tau++) {
-    l1Taus_pt.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().pt()));
-    l1Taus_eta.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().eta()));
-    l1Taus_phi.push_back(static_cast<float>(l1Taus[iL1Tau]->polarP4().phi()));
-    l1Taus_hwIso.push_back(static_cast<float>(l1Taus[iL1Tau]->hwIso()));
-  }
-
-  std::vector<int> pt_indices=ReorderByEnergy(l1Taus_pt);
+  std::vector<int> pt_indices=ReorderL1TauPt(l1Taus);
   int nTaus = pt_indices.size();
 
   // Create tensor
@@ -417,15 +425,15 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
     for (int eta_idx = 0; eta_idx<nCellEta ; eta_idx++){
       for (int phi_idx = 0; phi_idx<nCellPhi ; phi_idx++){
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::nVertices) = static_cast<float>(patavertices.size());
-        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_pt)  = static_cast<float>(l1Taus_pt.at(tau_idx));
-        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_eta)  = static_cast<float>(l1Taus_eta.at(tau_idx));
-        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_hwIso)  = static_cast<float>(l1Taus_hwIso.at(tau_idx));
+        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_pt)  = static_cast<float>(l1Taus[tau_idx]->polarP4().pt());
+        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_eta)  = static_cast<float>(l1Taus[tau_idx]->polarP4().eta());
+        cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_hwIso)  = static_cast<float>(l1Taus[tau_idx]->hwIso());
       }
     }
 
     // define l1tau eta and phi to evaluate dR
-    float tauEta = l1Taus_eta.at(tau_idx);
-    float tauPhi = l1Taus_phi.at(tau_idx);
+    float tauEta = l1Taus[tau_idx]->polarP4().eta();
+    float tauPhi = l1Taus[tau_idx]->polarP4().phi();
 
     // fill tensor with Ecal around delta R < 0.5 wrt l1taus
     for (auto & caloRecHit_ee : *caloRecHits.ee){
@@ -631,33 +639,38 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   std::vector<int> cellGridMatrixShape = get_tensor_shape(cellGridMatrix);
   bool printoutevt=false;
   checknan(cellGridMatrix,printoutevt);
-  standardizeTensor(cellGridMatrix, normalizationDict_);
+  standardizeTensor(cellGridMatrix);
 
   /* for debugging uncomment  following lines */
-  //if(evt_id==135012){
-  //  printoutevt=true;
-  //}
-  //checknan(cellGridMatrix,printoutevt);
+  if(debugLevel>10){
+    if( evt_id==135012){
+      printoutevt=true;
+    }
+    checknan(cellGridMatrix,printoutevt);
+  }
 
   std::vector<tensorflow::Tensor> pred_vector;
   tensorflow::run(session_, {{inputTensorName_, cellGridMatrix}}, {outputTensorName_}, &pred_vector);
 
-  /* for debugging uncomment  following lines */
-
-  //for (auto& tau_idx : pt_indices){
-  //  std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus_pt.at(tau_idx) << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
-  //}
+  /* debugging */
+  if(debugLevel>1){
+    for (auto& tau_idx : pt_indices){
+      std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus[tau_idx]->polarP4().pt() << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
+    }
+  }
   int n_TauPassed =0;
   for (auto& tau_idx : pt_indices){
     if(pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
-    //if(l1Taus_pt.at(tau_idx)>=32. && (l1Taus_pt.at(tau_idx)>=70. || l1Taus_hwIso.at(tau_idx)>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
+    //if(l1Taus[tau_idx]->polarP4().pt().>=32. && (l1Taus[tau_idx]->polarP4().pt().>=70. || l1Taus[tau_idx].hwIso()>0) && pred_vector[0].matrix<float>()(tau_idx, 0)>static_cast<float>(discr_threshold_))
     {
       n_TauPassed+=1;
     }
   }
   if(n_TauPassed==2){
-    /* for debugging uncomment  following line */
-    //std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
+    /* debugging && double check of evt passed */
+    if(debugLevel>2){
+      std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
+    }
     result = true;
   }
 }
@@ -668,12 +681,6 @@ bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
 
   l1t::TauVectorRef l1TausRef;
   l1TriggeredTaus->getObjects(trigger::TriggerL1Tau, l1TausRef);
-  /*
-  l1t::TauBxCollection l1Taus;
-  l1Taus = *l1TausRef;
-
-  edm::Handle<l1t::TauBxCollection> l1Taus;
-  event.getByToken(l1Taus_token, l1Taus);*/
   edm::Handle<EcalRecHitCollection> ebHandle;
   edm::Handle<EcalRecHitCollection> eeHandle;
   for (std::vector<edm::EDGetTokenT<EcalRecHitCollection> >::const_iterator i = ecal_tokens.begin(); i != ecal_tokens.end(); i++) {
@@ -712,9 +719,11 @@ bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
 
 
   FindObjectsAroundL1Tau(caloRecHits, *pataTracks, *pataVertices, l1TausRef,evt_id,result);
-  /* uncomment following lines for debugging */
-  if (result == true){
-    std::cout << "event passed == " << evt_id << std::endl;
+  /* debugging */
+  if(debugLevel>0){
+    if (result == true){
+      std::cout << "event passed == " << evt_id << std::endl;
+    }
   }
 
   return result;

@@ -16,6 +16,7 @@ def update(process):
 
     process = customizeHLTforPatatrackTriplets(process)
     process.l2TauNNTagFilter = l2TauNNTag.clone(
+        debugLevel = 0,
         processName = cms.string('MLProva'),
         L1TauTrigger=cms.InputTag('hltL1sDoubleTauBigOR'),
         #l1taus=cms.InputTag('hltGtStage2Digis','Tau'),
@@ -43,9 +44,16 @@ def update(process):
     process.hltHpsSelectedPFTausTrackPt1MediumChargedIsolationReg.src = cms.InputTag( "hltHpsPFTauProducer" )
 
     # re-define path with l2 updated sequence
-    process.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4 = cms.Path(process.HLTBeginSequence + process.hltL1sDoubleTauBigOR + process.hltPreDoubleMediumChargedIsoPFTauHPS35Trk1eta2p1Reg + process.L2Sequence + process.HLTGlobalPFTauHPSSequence + process.HLTHPSDoublePFTauPt35Eta2p1Trk1Reg + process.HLTHPSMediumChargedIsoPFTauSequenceReg + process.hltHpsSelectedPFTausTrackPt1MediumChargedIsolationReg + process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationReg + process.hltHpsL1JetsHLTDoublePFTauTrackPt1MediumChargedIsolationMatchReg + process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationL1HLTMatchedReg + process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationDz02Reg + process.HLTEndSequence, process.HLTDoLocalPixelTask, process.HLTRecoPixelTracksTask, process.HLTRecopixelvertexingTask)
+    process.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4 = cms.Path(process.HLTBeginSequence + process.hltL1sDoubleTauBigOR +
+    process.hltPreDoubleMediumChargedIsoPFTauHPS35Trk1eta2p1Reg +  process.L2Sequence + process.HLTGlobalPFTauHPSSequence +
+    process.HLTHPSDoublePFTauPt35Eta2p1Trk1Reg + process.HLTHPSMediumChargedIsoPFTauSequenceReg +
+    process.hltHpsSelectedPFTausTrackPt1MediumChargedIsolationReg + process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationReg +
+    process.hltHpsL1JetsHLTDoublePFTauTrackPt1MediumChargedIsolationMatchReg +
+    process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationL1HLTMatchedReg + process.hltHpsDoublePFTau35TrackPt1MediumChargedIsolationDz02Reg +
+    process.HLTEndSequence, process.HLTDoLocalPixelTask, process.HLTRecoPixelTracksTask, process.HLTRecopixelvertexingTask)
 
 
-    process.schedule = cms.Schedule(*[ process.HLTriggerFirstPath, process.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4, process.HLTriggerFinalPath, process.endjob_step ], tasks=[process.patAlgosToolsTask])
+    process.schedule = cms.Schedule(*[ process.HLTriggerFirstPath, process.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4,
+    process.HLTriggerFinalPath, process.endjob_step ], tasks=[process.patAlgosToolsTask])
 
     return process
