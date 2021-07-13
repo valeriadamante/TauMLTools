@@ -27,6 +27,7 @@ def update(process):
         discr_threshold = cms.double(thWp[rateWP])
     )
 
+    process.HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4.remove(process.hltHpsL1JetsHLTDoublePFTauTrackPt1MediumChargedIsolationMatchReg)
 
     #process.l2TauNNTag.discr_threshold = cms.double(thWp[rateWP])
     #process.MLPathTest = cms.Path(process.HLTBeginSequence + process.hltL1sDoubleTauBigOR , process.HLTDoLocalPixelTask, process.HLTRecoPixelTracksTask, process.HLTRecopixelvertexingTask)
