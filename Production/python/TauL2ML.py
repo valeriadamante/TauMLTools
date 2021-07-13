@@ -17,6 +17,8 @@ options.register('eventList', '', VarParsing.multiplicity.singleton, VarParsing.
                  "List of events to process.")
 options.register('dumpPython', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
                  "Dump full config into stdout.")
+options.register('Summary', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
+                 "want summary")
 
 options.parseArguments()
 dataDict = {"Run3MC" : False, "Run2Data" : True}
@@ -158,4 +160,7 @@ process = customiseEarlyDelete(process)
 if options.dumpPython:
     print process.dumpPython()
 
+process.options.wantSummary = cms.untracked.bool(False)
+if options.Summary:
+   process.options.wantSummary = cms.untracked.bool(True)
 # End adding early deletion

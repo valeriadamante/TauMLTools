@@ -657,7 +657,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   }
   if(n_TauPassed==2){
     /* for debugging uncomment  following line */
-    std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
+    //std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
     result = true;
   }
 }
