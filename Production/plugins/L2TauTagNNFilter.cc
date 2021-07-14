@@ -132,6 +132,7 @@ struct CacheData {
 
 class L2TauNNTag : public edm::stream::EDFilter<edm::GlobalCache<CacheData>> {
 public:
+
   struct caloRecHitCollections {
     const HBHERecHitCollection  *hbhe;
     const HORecHitCollection *ho;
@@ -139,12 +140,14 @@ public:
     const EcalRecHitCollection *ee;
     const CaloGeometry *Geometry;
   };
+
   struct normDictElement{
     float mean;
     float std;
     float min;
     float max;
   };
+
   explicit L2TauNNTag(const edm::ParameterSet&, const CacheData*);
   ~L2TauNNTag() override {}
   static void fillDescriptions(edm::ConfigurationDescriptions&);
@@ -155,23 +158,20 @@ public:
 private:
   void beginJob();
   std::vector<int> get_tensor_shape(tensorflow::Tensor& tensor);
-  static constexpr float pi = boost::math::constants::pi<float>();
-  float DeltaPhi(Float_t phi1, Float_t phi2);
-  float DeltaEta(Float_t eta1, Float_t eta2) ;
   float DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2);
   std::vector<int> ReorderL1TauPt( const l1t::TauVectorRef& l1Taus);
   int FindVertexIndex(const reco::VertexCollection& vertices, const reco::Track& track);
   void initializeTensor(tensorflow::Tensor& tensor);
-  void checknan(tensorflow::Tensor& tensor, bool printoutTensor);
+  void checknan(tensorflow::Tensor& tensor, bool printoutTensor, int debugLevel);
   void standardizeTensor(tensorflow::Tensor& tensor);
   void FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result);
   bool filter(edm::Event& event, const edm::EventSetup& eventsetup) ;
   void endJob() ;
 
 private:
-  int debugLevel;
+  int debugLevel_;
   std::string processName;
-  const edm::EDGetTokenT<trigger::TriggerFilterObjectWithRefs> tauTrigger;
+  const edm::EDGetTokenT<trigger::TriggerFilterObjectWithRefs> tauTrigger_token;
   edm::EDGetTokenT<HBHERecHitCollection> hbhe_token;
   edm::EDGetTokenT<HORecHitCollection> ho_token;
   std::vector<edm::InputTag> ecalLabels;
@@ -212,12 +212,10 @@ void L2TauNNTag::globalEndJob(const CacheData* cacheData) {
 }
 
 void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  // defining this function will lead to a *_cfi file being generated when compiling
   edm::ParameterSetDescription desc;
   desc.add<int>("debugLevel");
   desc.add<std::string>("processName");
   desc.add<edm::InputTag>("L1TauTrigger");
-  //desc.add<edm::InputTag>("l1taus");
   desc.add<edm::InputTag>("hbheInput");
   desc.add<edm::InputTag>("hoInput");
   desc.add<std::vector<edm::InputTag> >("ecalInputs");
@@ -229,11 +227,10 @@ void L2TauNNTag::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
   descriptions.addWithDefaultLabel(desc);
 }
 
-
 L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData):
-      debugLevel(cfg.getParameter<int>("debugLevel")),
+      debugLevel_(cfg.getParameter<int>("debugLevel")),
       processName(cfg.getParameter<std::string>("processName")),
-      tauTrigger(consumes<trigger::TriggerFilterObjectWithRefs>(cfg.getParameter<edm::InputTag>("L1TauTrigger"))),
+      tauTrigger_token(consumes<trigger::TriggerFilterObjectWithRefs>(cfg.getParameter<edm::InputTag>("L1TauTrigger"))),
       hbhe_token(consumes<HBHERecHitCollection>(cfg.getParameter<edm::InputTag>("hbheInput"))),
       ho_token(consumes<HORecHitCollection>(cfg.getParameter<edm::InputTag>("hoInput"))),
       ecalLabels(cfg.getParameter<std::vector<edm::InputTag> >("ecalInputs")),
@@ -250,10 +247,9 @@ L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData)
         const unsigned nLabels = ecalLabels.size();
         for (unsigned i = 0; i != nLabels; i++)
           ecal_tokens.push_back(consumes<EcalRecHitCollection>(ecalLabels[i]));
-        /* load normalization map */
+
         pt::ptree loadPtreeRoot;
         pt::read_json(normalizationDict_, loadPtreeRoot);
-
         for (auto& [key, val] : varNameMap){
           pt::ptree var = loadPtreeRoot.get_child(val);
           normDictElement current_element;
@@ -269,7 +265,6 @@ L2TauNNTag::L2TauNNTag(const edm::ParameterSet& cfg, const CacheData* cacheData)
 void L2TauNNTag::beginJob() {}
 
 void L2TauNNTag::endJob() {
-  // close the session
   tensorflow::closeSession(session_);
 }
 
@@ -282,24 +277,13 @@ std::vector<int> L2TauNNTag::get_tensor_shape(tensorflow::Tensor& tensor) {
     }
     return shape;
 }
-float L2TauNNTag::DeltaPhi(Float_t phi1, Float_t phi2) {
-    static constexpr float pi = boost::math::constants::pi<float>();
-  float dphi = phi1 - phi2;
-    if(dphi > pi)
-        dphi -= 2*pi;
-    else if(dphi <= -pi)
-        dphi += 2*pi;
-    return dphi;
-}
-float L2TauNNTag::DeltaEta(Float_t eta1, Float_t eta2)  {
-  return (eta1-eta2);
-}
-float L2TauNNTag::DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2) {
-  float dphi = DeltaPhi(phi1, phi2);
-  float deta = DeltaEta(eta1, eta2);
-  return (std::sqrt(deta * deta + dphi * dphi));
 
+float L2TauNNTag::DeltaR(Float_t phi1,Float_t eta1,Float_t phi2,Float_t eta2) {
+  float dphi = reco::deltaPhi(phi1, phi2);
+  float deta = eta1-eta2;
+  return (std::sqrt(deta * deta + dphi * dphi));
 }
+
 std::vector<int> L2TauNNTag::ReorderL1TauPt(const l1t::TauVectorRef& l1Taus){
     std::vector<float> l1Tau_pt;
     for (unsigned int iL1Tau = 0; iL1Tau < l1Taus.size(); iL1Tau++) {
@@ -322,6 +306,7 @@ std::vector<int> L2TauNNTag::ReorderL1TauPt(const l1t::TauVectorRef& l1Taus){
     }
     return indices;
  }
+
 int L2TauNNTag::FindVertexIndex(const reco::VertexCollection& vertices, const reco::Track& track){
   const reco::TrackBase *track_to_compare = &track;
   for(size_t n = 0; n< vertices.size() ; ++n){
@@ -333,6 +318,7 @@ int L2TauNNTag::FindVertexIndex(const reco::VertexCollection& vertices, const re
   }
   return -1;
 }
+
 void L2TauNNTag::initializeTensor(tensorflow::Tensor& tensor){
   std::vector<int> tensor_shape = get_tensor_shape(tensor);
   for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
@@ -345,7 +331,8 @@ void L2TauNNTag::initializeTensor(tensorflow::Tensor& tensor){
     }
   }
 }
-void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor){
+
+void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor, int debugLevel){
   std::vector<int> tensor_shape = get_tensor_shape(tensor);
   for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
     for(int eta_idx =0; eta_idx < tensor_shape.at(1); eta_idx++){
@@ -353,25 +340,49 @@ void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor){
         for(int var_idx =0; var_idx < tensor_shape.at(3); var_idx++){
           auto nonstd_var = tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx);
           if(std::isnan(nonstd_var)){
-            std::cout << "var is nan \nvar name= " << varNameMap.at(var_idx) << "\t tau_idx = " << tau_idx << "\t eta_idx = " << eta_idx << "\t phi_idx = " << phi_idx << std::endl;
-            std::cout << "other vars in same cell \n";
-            if(var_idx+1 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+1) << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+1)<< std::endl;
-            if(var_idx+2 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+2) << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+2)<< std::endl;
-            if(var_idx+3 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+3) << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+3)<< std::endl;
-            if(var_idx+4 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+4) << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+4)<< std::endl;
+            std::cout << "var is nan \nvar name= " << varNameMap.at(var_idx)
+              << "\t tau_idx = " << tau_idx << "\t eta_idx = " << eta_idx
+                << "\t phi_idx = " << phi_idx << std::endl;
+            if(debugLevel>2){
+              std::cout << "other vars in same cell \n";
+
+              if(var_idx+1 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+1)
+                << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+1)
+                  << std::endl;
+
+              if(var_idx+2 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+2)
+                << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+2)
+                  << std::endl;
+
+              if(var_idx+3 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+3)
+                << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+3)
+                  << std::endl;
+
+              if(var_idx+4 < tensor_shape.at(3)) std::cout << varNameMap.at(var_idx+4)
+                << "\t = " <<tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx+4)
+                  << std::endl;
+            }
           }
         }
       }
     }
   }
-  if(printoutTensor ){ /* this is only for debugging */
+  if(printoutTensor){ /* this is only for debugging */
     for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
       for(int phi_idx =0; phi_idx < tensor_shape.at(1); phi_idx++){
         for(int eta_idx =0; eta_idx < tensor_shape.at(2); eta_idx++){
           for(int var_idx =0; var_idx < tensor_shape.at(3); var_idx++){
+            // Search for a specific tau (with pT = 113.5 GeV) in a specific event 135012
             if(tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::l1Tau_pt)*256.0 == 113.5){
-              std::cout << tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx) <<",\n";
-              //std::cout << "\nvar name= " << varNameMap.at(var_idx) << "\t tau_idx = " << tau_idx << "\t eta_idx = " << eta_idx << "\t phi_idx = " << phi_idx << " \tvalue =" << tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx);
+              if(debugLevel<5){
+                break;
+              }
+              if(debugLevel>=5 && debugLevel<10){
+                std::cout << tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx) <<",\n";
+              }
+              else{
+                std::cout << "\nvar name= " << varNameMap.at(var_idx) << "\t tau_idx = " << tau_idx << "\t eta_idx = " << eta_idx << "\t phi_idx = " << phi_idx << " \tvalue =" << tensor.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, var_idx);
+              }
             }
           }
         }
@@ -379,6 +390,7 @@ void L2TauNNTag::checknan(tensorflow::Tensor& tensor, bool printoutTensor){
     }
   }
 }
+
 void L2TauNNTag::standardizeTensor(tensorflow::Tensor& tensor){
   std::vector<int> tensor_shape = get_tensor_shape(tensor);
   for(int tau_idx =0; tau_idx < tensor_shape.at(0); tau_idx++){
@@ -403,8 +415,8 @@ void L2TauNNTag::standardizeTensor(tensorflow::Tensor& tensor){
     }
   }
 }
-void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result){
 
+void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits, const reco::TrackCollection& patatracks,const reco::VertexCollection& patavertices, const l1t::TauVectorRef& l1Taus, int evt_id,bool &result){
   float dR_max = 0.5;
   int nCellEta = 5;
   int nCellPhi = 5;
@@ -421,6 +433,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
   // find objects  around l1 tau and fill matrix
   for (auto& tau_idx : pt_indices){
+
     // fill tensor with global observables
     for (int eta_idx = 0; eta_idx<nCellEta ; eta_idx++){
       for (int phi_idx = 0; phi_idx<nCellPhi ; phi_idx++){
@@ -446,9 +459,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
       // require them to fall into deltaR < deltaR_max = 0.5 wrt l1taus
       if(DeltaR(eeCalPhi,eeCalEta,tauPhi,tauEta)<dR_max){
-        float deta = DeltaEta(eeCalEta, tauEta);
+        float deta = eeCalEta-tauEta;
         int eta_idx = static_cast<int>(floor(((deta + dR_max) / dEta_width)));
-        float dphi = DeltaPhi(eeCalPhi, tauPhi);
+        float dphi = reco::deltaPhi(eeCalPhi, tauPhi);
         int phi_idx = static_cast<int>(floor(((dphi + dR_max) / dPhi_width)));
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum)+=static_cast<float>(eeCalEn); //
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize)+=static_cast<float>(1);
@@ -473,9 +486,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
       // require them to fall into deltaR < deltaR_max = 0.5 wrt l1taus
       if(DeltaR(ebCalPhi,ebCalEta,tauPhi,tauEta)<dR_max){
-        float deta = DeltaEta(ebCalEta, tauEta);
+        float deta = ebCalEta-tauEta;
         int eta_idx = static_cast<int>(floor(((deta + dR_max) / dEta_width)));
-        float dphi = DeltaPhi(ebCalPhi, tauPhi);
+        float dphi = reco::deltaPhi(ebCalPhi, tauPhi);
         int phi_idx = static_cast<int>(floor(((dphi + dR_max) / dPhi_width)));
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum)+=static_cast<float>(ebCalEn); //
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize)+=static_cast<float>(1);
@@ -490,7 +503,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
       }
     } // end of loop over calorechit_eb
 
-    // divide by the sum of all and define std dev
+    // normalize to sum and define stdDev (last is not for Patatracks)
     for (int eta_idx = 0; eta_idx<nCellEta ; eta_idx++){
       for (int phi_idx = 0; phi_idx<nCellPhi ; phi_idx++){
         if(cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum)>static_cast<float>(0)){
@@ -501,10 +514,8 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalChi2) =  cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalChi2)/cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySumForPositiveChi2);
         }
         if(cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize)>static_cast<float>(1)){
-          float a = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergyStdDev);
-          float b = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum);
-          float c = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize);
-          cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergyStdDev) = ( a - (b*b/c) ) / (c-1);
+          // (stdDev - (enSum*enSum)/size) / (size-1)
+          cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergyStdDev) = ( cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergyStdDev) - ( (cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum)*cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergySum) ) / cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize) ) ) / (cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalSize)-1);
         }
         else{
           cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::EcalEnergyStdDev) =static_cast<float>(0);
@@ -524,9 +535,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
       // require them to fall into deltaR < deltaR_max = 0.5 wrt l1taus
       if(DeltaR(hbheCalPhi,hbheCalEta,tauPhi,tauEta)<dR_max){
-        float deta = DeltaEta(hbheCalEta, tauEta);
+        float deta = hbheCalEta-tauEta;
         int eta_idx = static_cast<int>(floor(((deta + dR_max) / dEta_width)));
-        float dphi = DeltaPhi(hbheCalPhi, tauPhi);
+        float dphi = reco::deltaPhi(hbheCalPhi, tauPhi);
         int phi_idx = static_cast<int>(floor(((dphi + dR_max) / dPhi_width)));
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum)+=static_cast<float>(hbheCalEn); //
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev)+=static_cast<float>(hbheCalEn*hbheCalEn); //
@@ -550,9 +561,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
       // require them to fall into deltaR < deltaR_max = 0.5 wrt l1taus
       if(DeltaR(hoCalPhi,hoCalEta,tauPhi,tauEta)<dR_max){
-        float deta = DeltaEta(hoCalEta, tauEta);
+        float deta = hoCalEta - tauEta;
         int eta_idx = static_cast<int>(floor(((deta + dR_max) / dEta_width)));
-        float dphi = DeltaPhi(hoCalPhi, tauPhi);
+        float dphi = reco::deltaPhi(hoCalPhi, tauPhi);
         int phi_idx = static_cast<int>(floor(((dphi + dR_max) / dPhi_width)));
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum)+=static_cast<float>(hoCalEn); //
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev)+=static_cast<float>(hoCalEn*hoCalEn); //
@@ -562,6 +573,7 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
       }
     } // end of loop over calorechit_ho
 
+    // normalize to sum and define stdDev (last is not for Patatracks)
     for (int eta_idx = 0; eta_idx<nCellEta ; eta_idx++){
       for (int phi_idx = 0; phi_idx<nCellPhi ; phi_idx++){
         if(cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum)>static_cast<float>(0)){
@@ -572,10 +584,8 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalChi2) =  cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalChi2)/cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySumForPositiveChi2);
         }
         if(cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalSize)>static_cast<float>(1)){
-          float a = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev);
-          float b = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum);
-          float c = cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalSize);
-          cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev) = ( a - (b*b/c) ) / (c-1);
+          // (stdDev - (enSum*enSum)/size) / (size-1)
+          cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev) = ( cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev) - ( (cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum)*cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergySum) ) / cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalSize) ) ) / (cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalSize)-1);
         }
         else{
           cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::HcalEnergyStdDev) =static_cast<float>(0);
@@ -602,9 +612,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
       // require them to fall into deltaR < deltaR_max = 0.5 wrt l1taus
       if(DeltaR(patatrackPhi,patatrackEta,tauPhi,tauEta)<dR_max){
-        float deta = DeltaEta(patatrackEta, tauEta);
+        float deta = patatrackEta-tauEta;
         int eta_idx = static_cast<int>(floor(((deta + dR_max) / dEta_width)));
-        float dphi = DeltaPhi(patatrackPhi, tauPhi);
+        float dphi = reco::deltaPhi(patatrackPhi, tauPhi);
         int phi_idx = static_cast<int>(floor(((dphi + dR_max) / dPhi_width)));
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::PatatrackPtSum) +=static_cast<float>(patatrackPt);
         cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::PatatrackSize) +=static_cast<float>(1);
@@ -620,8 +630,9 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
           cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx, NNInputs::PatatrackSizeWithVertex) +=static_cast<float>(1);
         }
       }
-
     } // end of loop over patatracks
+
+    // normalize to sum and define stdDev (last is not for Patatracks)
     for (int eta_idx = 0; eta_idx<nCellEta ; eta_idx++){
       for (int phi_idx = 0; phi_idx<nCellPhi ; phi_idx++){
         if(cellGridMatrix.tensor<float, 4>()(tau_idx, phi_idx, eta_idx,NNInputs::PatatrackPtSum)>static_cast<float>(0)){
@@ -638,22 +649,22 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
 
   std::vector<int> cellGridMatrixShape = get_tensor_shape(cellGridMatrix);
   bool printoutevt=false;
-  checknan(cellGridMatrix,printoutevt);
+  checknan(cellGridMatrix,printoutevt, debugLevel_);
   standardizeTensor(cellGridMatrix);
 
   /* for debugging uncomment  following lines */
-  if(debugLevel>10){
-    if( evt_id==135012){
+  if(debugLevel_>4){
+    if(evt_id==135012){
       printoutevt=true;
     }
-    checknan(cellGridMatrix,printoutevt);
+    checknan(cellGridMatrix,printoutevt, debugLevel_);
   }
 
   std::vector<tensorflow::Tensor> pred_vector;
   tensorflow::run(session_, {{inputTensorName_, cellGridMatrix}}, {outputTensorName_}, &pred_vector);
 
   /* debugging */
-  if(debugLevel>1){
+  if(debugLevel_>1){
     for (auto& tau_idx : pt_indices){
       std::cout << "evt == " << evt_id<<" outcome for tau with pt =  " << l1Taus[tau_idx]->polarP4().pt() << " is \t "<< pred_vector[0].matrix<float>()(tau_idx, 0)<< std::endl;
     }
@@ -668,16 +679,17 @@ void L2TauNNTag::FindObjectsAroundL1Tau(const caloRecHitCollections& caloRecHits
   }
   if(n_TauPassed==2){
     /* debugging && double check of evt passed */
-    if(debugLevel>2){
+    if(debugLevel_>2){
       std::cout << "evt == " << evt_id<<" passed 2 taus " << std::endl;
     }
     result = true;
   }
 }
+
 bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
   bool result = false;
   edm::Handle<trigger::TriggerFilterObjectWithRefs> l1TriggeredTaus;
-  event.getByToken(tauTrigger, l1TriggeredTaus);
+  event.getByToken(tauTrigger_token, l1TriggeredTaus);
 
   l1t::TauVectorRef l1TausRef;
   l1TriggeredTaus->getObjects(trigger::TriggerL1Tau, l1TausRef);
@@ -720,7 +732,7 @@ bool L2TauNNTag::filter(edm::Event& event, const edm::EventSetup& eventsetup) {
 
   FindObjectsAroundL1Tau(caloRecHits, *pataTracks, *pataVertices, l1TausRef,evt_id,result);
   /* debugging */
-  if(debugLevel>0){
+  if(debugLevel_>0){
     if (result == true){
       std::cout << "event passed == " << evt_id << std::endl;
     }
